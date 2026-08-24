@@ -4,7 +4,7 @@
 // =============
 //
 // {
-//   "format": "simple-tab-workspaces",
+//   "format": "my-simple-tabs-workspace",
 //   "formatVersion": 1,
 //   "app":  { "name": "...", "version": "1.0.7" },
 //   "exportedAt": "2026-08-24T12:00:00.000Z",
@@ -30,12 +30,14 @@
 // numeric group ids, which mean nothing in another profile or after a restart.
 
 const Backup = {
-  // These strings identify the file format, not the add-on, and they are
-  // deliberately not renamed when the add-on is. Changing one would make every
-  // backup already written unreadable, for no gain: a reader matches on the
-  // format string, and nobody reads it.
-  FORMAT: 'simple-tab-workspaces',
-  SETTINGS_FORMAT: 'simple-tab-workspaces-settings',
+  // Written on export. Older spellings stay readable below, so a backup taken
+  // before the rename still restores: a format string is matched, not shown,
+  // so dropping one only ever strands files.
+  FORMAT: 'my-simple-tabs-workspace',
+  SETTINGS_FORMAT: 'my-simple-tabs-workspace-settings',
+
+  LEGACY_FORMATS: ['simple-tab-workspaces'],
+  LEGACY_SETTINGS_FORMATS: ['simple-tab-workspaces-settings'],
   VERSION: 1,
   SETTINGS_VERSION: 1,
 
@@ -50,6 +52,14 @@ const Backup = {
   // MIGRATIONS[n] upgrades a v(n) document to v(n+1). Empty until the format
   // has to break; the machinery is here so the first break is cheap.
   MIGRATIONS: {},
+
+  isWorkspaceFormat(format) {
+    return format === Backup.FORMAT || Backup.LEGACY_FORMATS.includes(format)
+  },
+
+  isSettingsFormat(format) {
+    return format === Backup.SETTINGS_FORMAT || Backup.LEGACY_SETTINGS_FORMATS.includes(format)
+  },
 
   async exportAll() {
     const all = await Store.loadAll()
@@ -111,10 +121,10 @@ const Backup = {
     if (!doc || typeof doc !== 'object' || Array.isArray(doc) || typeof doc.format !== 'string') {
       throw new Error('That file is not a backup.')
     }
-    if (doc.format === Backup.SETTINGS_FORMAT) {
+    if (Backup.isSettingsFormat(doc.format)) {
       throw new Error('That is a settings backup. Restore it under Settings instead.')
     }
-    if (doc.format !== Backup.FORMAT) {
+    if (!Backup.isWorkspaceFormat(doc.format)) {
       throw new Error('That backup was made by a different add-on.')
     }
 
@@ -240,10 +250,10 @@ const Backup = {
     if (!doc || typeof doc !== 'object' || Array.isArray(doc) || typeof doc.format !== 'string') {
       throw new Error('That file is not a settings backup.')
     }
-    if (doc.format === Backup.FORMAT) {
+    if (Backup.isWorkspaceFormat(doc.format)) {
       throw new Error('That is a workspace backup. Restore it under Restore a backup instead.')
     }
-    if (doc.format !== Backup.SETTINGS_FORMAT) {
+    if (!Backup.isSettingsFormat(doc.format)) {
       throw new Error('That backup was made by a different add-on.')
     }
 

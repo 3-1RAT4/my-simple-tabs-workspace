@@ -69,7 +69,7 @@ const tests = [
     await env.Settings.update({ 'ui.scale': 2.5, 'behavior.confirmDelete': false })
     const doc = await env.Backup.exportSettings()
 
-    eq(doc.format, 'simple-tab-workspaces-settings', 'its own format')
+    eq(doc.format, 'my-simple-tabs-workspace-settings', 'its own format')
     eq(doc.formatVersion, 1, 'versioned')
     eq(doc.settings.ui.scale, 2.5, 'value carried')
 
@@ -116,7 +116,7 @@ const tests = [
     try {
       env.Backup.parseSettings(
         JSON.stringify({
-          format: 'simple-tab-workspaces-settings',
+          format: 'my-simple-tabs-workspace-settings',
           formatVersion: 99,
           settings: {},
         })
@@ -127,10 +127,34 @@ const tests = [
     }
   }),
 
+  test('a settings file written before the rename still restores', async () => {
+    const env = boot()
+    const legacy = {
+      format: 'simple-tab-workspaces-settings',
+      formatVersion: 1,
+      settings: { ui: { scale: 1.8 }, behavior: { quickSwitchKeys: false } },
+    }
+    const { settings } = await env.Backup.importSettings(JSON.stringify(legacy))
+    eq(settings.ui.scale, 1.8, 'value carried across the rename')
+    eq(settings.behavior.quickSwitchKeys, false, 'and the toggle')
+  }),
+
+  test('an old workspace file is still recognised as the wrong kind', async () => {
+    const env = boot()
+    try {
+      env.Backup.parseSettings(
+        JSON.stringify({ format: 'simple-tab-workspaces', formatVersion: 1, workspaces: [] })
+      )
+      throw new Error('should have refused')
+    } catch (err) {
+      ok(err.message.includes('workspace backup'), 'named correctly despite the old spelling')
+    }
+  }),
+
   test('a tampered settings file cannot break the popup', async () => {
     const env = boot()
     const doc = {
-      format: 'simple-tab-workspaces-settings',
+      format: 'my-simple-tabs-workspace-settings',
       formatVersion: 1,
       settings: { ui: { scale: 9999, text: -1, listHeight: 'tall' } },
     }

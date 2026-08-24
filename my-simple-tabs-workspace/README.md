@@ -45,14 +45,15 @@ Two separate files, because they answer different questions. Workspaces are your
 tabs; settings are how the add-on behaves. Carrying a setup to another profile
 should not bring that profile's tabs with it.
 
-The `format` strings identify the file format rather than the add-on, so they
-kept their original spelling through the rename. Renaming them would strand
-every backup already written.
-
 | File | `format` | Holds |
 |---|---|---|
-| Workspaces | `simple-tab-workspaces` | workspaces, tabs, groups, separators, order |
-| Settings | `simple-tab-workspaces-settings` | the settings above |
+| Workspaces | `my-simple-tabs-workspace` | workspaces, tabs, groups, separators, order |
+| Settings | `my-simple-tabs-workspace-settings` | the settings above |
+
+Files written before the rename used `simple-tab-workspaces` and
+`simple-tab-workspaces-settings`. Those spellings are still accepted on import,
+listed in `LEGACY_FORMATS`, because a format string is matched rather than shown
+and dropping one only ever strands files. Exports always use the current name.
 
 Each refuses to be restored as the other, naming what the file actually is and
 which control to use.
@@ -66,9 +67,9 @@ The file is designed to stay readable across releases:
 
 ```json
 {
-  "format": "simple-tab-workspaces",
+  "format": "my-simple-tabs-workspace",
   "formatVersion": 1,
-  "app": { "name": "My Simple Tabs Workspace", "version": "1.1.0" },
+  "app": { "name": "My Simple Tabs Workspace", "version": "1.2.0" },
   "exportedAt": "2026-08-24T12:00:00.000Z",
   "workspaces": [
     { "id": "...", "name": "Research", "color": "purple", "icon": "\ud83d\udcda",

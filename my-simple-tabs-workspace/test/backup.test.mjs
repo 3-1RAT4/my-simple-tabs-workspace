@@ -28,7 +28,7 @@ const tests = [
     await seed(env)
     const doc = await env.Backup.exportAll()
 
-    eq(doc.format, 'simple-tab-workspaces', 'format tag')
+    eq(doc.format, 'my-simple-tabs-workspace', 'format tag')
     eq(doc.formatVersion, 1, 'version')
     eq(doc.app.version, '1.0.7', 'app version recorded')
     ok(doc.exportedAt.startsWith('20'), 'timestamp present')
@@ -88,7 +88,7 @@ const tests = [
 
   test('a backup from a newer format is refused, not guessed at', async () => {
     const env = boot()
-    const doc = { format: 'simple-tab-workspaces', formatVersion: 99, workspaces: [] }
+    const doc = { format: 'my-simple-tabs-workspace', formatVersion: 99, workspaces: [] }
     try {
       env.Backup.parse(JSON.stringify(doc))
       throw new Error('should have refused')
@@ -113,7 +113,7 @@ const tests = [
     for (const [input, expected] of [
       ['not json at all', 'not JSON'],
       ['[]', 'not a backup'],
-      [JSON.stringify({ format: 'simple-tab-workspaces' }), 'no usable version'],
+      [JSON.stringify({ format: 'my-simple-tabs-workspace' }), 'no usable version'],
     ]) {
       try {
         env.Backup.parse(input)
@@ -136,7 +136,7 @@ const tests = [
 
     const parsed = env.Backup.parse(
       JSON.stringify({
-        format: 'simple-tab-workspaces',
+        format: 'my-simple-tabs-workspace',
         formatVersion: 1,
         workspaces: [{ id: 'x', name: 'Old', tabs: [] }],
       })
@@ -149,7 +149,7 @@ const tests = [
   test('values from a file are validated, not trusted', async () => {
     const env = boot()
     const doc = {
-      format: 'simple-tab-workspaces',
+      format: 'my-simple-tabs-workspace',
       formatVersion: 1,
       workspaces: [
         {
@@ -223,7 +223,7 @@ const tests = [
   test('a backup without separators still restores cleanly', async () => {
     const env = boot()
     const doc = {
-      format: 'simple-tab-workspaces',
+      format: 'my-simple-tabs-workspace',
       formatVersion: 1,
       workspaces: [{ id: 'a', name: 'Solo', tabs: [] }],
     }
@@ -233,10 +233,34 @@ const tests = [
     eq(list.filter(i => i.type === 'separator').length, 0, 'no separators invented')
   }),
 
+  test('a backup written before the rename still restores', async () => {
+    const env = boot()
+    // Exactly what version 1.1.0 and earlier wrote.
+    const legacy = {
+      format: 'simple-tab-workspaces',
+      formatVersion: 1,
+      app: { name: 'Simple Tab Workspaces', version: '1.1.0' },
+      workspaces: [{ id: 'old-1', name: 'From before', color: 'cyan', icon: '📦', tabs: [] }],
+    }
+
+    await env.Backup.importAll(JSON.stringify(legacy), 'replace')
+    const ws = (await env.Store.loadAll()).find(w => w.name === 'From before')
+    ok(ws, 'restored')
+    eq(ws.color, 'cyan', 'colour kept')
+    eq(ws.icon, '📦', 'icon kept')
+  }),
+
+  test('exports are written with the current format string', async () => {
+    const env = boot()
+    await seed(env)
+    const doc = await env.Backup.exportAll()
+    eq(doc.format, 'my-simple-tabs-workspace', 'current spelling on the way out')
+  }),
+
   test('a workspace with no name is skipped rather than imported blank', async () => {
     const env = boot()
     const doc = {
-      format: 'simple-tab-workspaces',
+      format: 'my-simple-tabs-workspace',
       formatVersion: 1,
       workspaces: [{ id: 'a', name: '   ', tabs: [] }, { id: 'b', name: 'Real', tabs: [] }],
     }
