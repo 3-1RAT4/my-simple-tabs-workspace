@@ -169,6 +169,20 @@ options/                   the backup page
 popup/                     the toolbar popup
 ```
 
+## Working on it
+
+```bash
+npm install       # web-ext and jsdom
+npm run lint      # manifest, syntax, web-ext lint
+npm test          # 80 scenarios against a mock browser API
+npm run build     # writes the .xpi to ~/Downloads
+npm run dev       # auto-reloading Firefox with the add-on loaded
+```
+
+Tests run without a browser: `test/lib/fake-browser.mjs` is a mock
+WebExtension API that models the ways Firefox refuses things. See `CLAUDE.md`
+for how the layers fit together.
+
 ## Install
 
 Temporary (gone on restart, good for iterating):

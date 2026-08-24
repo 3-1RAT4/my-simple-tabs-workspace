@@ -16,10 +16,10 @@ io.open('manifest.json', 'w').write(json.dumps(m, indent=2) + '\n')
 print(f"version -> {m['version']}")
 PYEOF
 fi
-WEB_EXT="${WEB_EXT:-/var/home/rodz/Projects/sidebery/node_modules/.bin/web-ext}"
+WEB_EXT="${WEB_EXT:-$(pwd)/node_modules/.bin/web-ext}"
 OUT="$HOME/Downloads/my-simple-tabs-workspace.xpi"
 
-"$WEB_EXT" build --source-dir . --artifacts-dir web-ext-artifacts --overwrite-dest --ignore-files "*.sh" "README.md" "test/**" >/dev/null
+"$WEB_EXT" build --source-dir . --artifacts-dir web-ext-artifacts --overwrite-dest --ignore-files "*.sh" "*.md" "test" "test/**" "tools" "tools/**" "package*.json" "node_modules/**" "web-ext-artifacts/**" >/dev/null
 cp "$(ls -t web-ext-artifacts/*.zip | head -1)" "$OUT"
 
 echo "built: $OUT"

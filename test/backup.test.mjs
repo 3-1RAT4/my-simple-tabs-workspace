@@ -1,7 +1,7 @@
 // The backup format has to survive version drift in both directions, so most
 // of these are about what happens when the file and the reader disagree.
-import { createFakeBrowser, loadExtension } from '../../lib/fake-browser.mjs'
-import { test, run, eq, ok } from '../../lib/test-kit.mjs'
+import { createFakeBrowser, loadExtension } from './lib/fake-browser.mjs'
+import { test, run, eq, ok } from './lib/test-kit.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const PERMS = ['tabs', 'cookies', 'tabGroups', 'sessions', 'storage', 'menus']

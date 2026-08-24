@@ -1,4 +1,4 @@
-# Working on extensions in this tree
+# Working on this add-on
 
 Read this before debugging or changing any addon here.
 
@@ -16,7 +16,7 @@ browser.
 | L0 | Syntax, manifest, `web-ext lint` | `npm run lint` |
 | L1 | Mock WebExtension API scenarios | `npm test` |
 | L2 | Popup executed in jsdom | `npm test` |
-| L3 | Real browser, auto-reload | `./tools/dev-firefox.sh <project>` |
+| L3 | Real browser, auto-reload | `./tools/dev-firefox.sh` |
 
 Never spend a round-trip on something a lower layer can catch.
 
@@ -76,13 +76,13 @@ devtools — it has already failed for them once.
 ## Layout
 
 ```
-lib/fake-browser.mjs   mock browser API + VM loader for background scripts
-lib/test-kit.mjs       tiny runner: test, run, eq, ok
-tools/lint.mjs         L0
-tools/test.mjs         runs every project's *.test.mjs
-tools/env-report.sh    browser environment snapshot
-tools/dev-firefox.sh   L3 auto-reload browser
-<project>/test/*.test.mjs
+test/lib/fake-browser.mjs   mock browser API + loader that reads manifest.json
+test/lib/test-kit.mjs       tiny runner: test, run, eq, ok
+test/*.test.mjs             the scenarios
+tools/lint.mjs              L0
+tools/test.mjs              runs every test/*.test.mjs
+tools/env-report.sh         browser environment snapshot
+tools/dev-firefox.sh        L3 auto-reload browser
 ```
 
 Background scripts are plain scripts sharing globals. `loadBackground()` runs them in one VM

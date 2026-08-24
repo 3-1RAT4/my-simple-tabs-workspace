@@ -1,7 +1,7 @@
 // Settings are validated in the background, so the UI cannot store a value the
 // add-on then fails to render. These are mostly about bad input.
-import { createFakeBrowser, loadExtension } from '../../lib/fake-browser.mjs'
-import { test, run, eq, ok } from '../../lib/test-kit.mjs'
+import { createFakeBrowser, loadExtension } from './lib/fake-browser.mjs'
+import { test, run, eq, ok } from './lib/test-kit.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 

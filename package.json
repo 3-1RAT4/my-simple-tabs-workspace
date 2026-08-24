@@ -1,12 +1,13 @@
 {
-  "name": "firefox-addons",
+  "name": "my-simple-tabs-workspace",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Workspace for browser extensions, with a shared test harness and dev tooling.",
+  "description": "One workspace per window for Firefox. Build tooling and tests.",
   "scripts": {
     "lint": "node tools/lint.mjs",
     "test": "node tools/test.mjs",
+    "build": "./build.sh",
     "dev": "./tools/dev-firefox.sh",
     "env": "./tools/env-report.sh"
   },

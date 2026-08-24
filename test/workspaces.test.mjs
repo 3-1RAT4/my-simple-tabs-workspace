@@ -1,7 +1,7 @@
 // Scenarios for the 1:1 window/workspace model. Each one exists because it
 // either broke in a real browser or is a rule we must not regress.
-import { createFakeBrowser, loadExtension } from '../../lib/fake-browser.mjs'
-import { test, run, eq, ok } from '../../lib/test-kit.mjs'
+import { createFakeBrowser, loadExtension } from './lib/fake-browser.mjs'
+import { test, run, eq, ok } from './lib/test-kit.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const PERMS = ['tabs', 'cookies', 'tabGroups', 'sessions', 'storage', 'menus']

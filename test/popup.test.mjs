@@ -1,7 +1,7 @@
 // Executes the real popup.html + popup.js in a DOM.
-import { JSDOM, VirtualConsole } from '../../node_modules/jsdom/lib/api.js'
+import { JSDOM, VirtualConsole } from '../node_modules/jsdom/lib/api.js'
 import { readFileSync } from 'node:fs'
-import { test, run, eq, ok } from '../../lib/test-kit.mjs'
+import { test, run, eq, ok } from './lib/test-kit.mjs'
 
 const dir = new URL('../popup/', import.meta.url).pathname
 const sent = []

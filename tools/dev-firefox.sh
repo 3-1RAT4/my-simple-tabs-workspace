@@ -6,7 +6,6 @@
 # file watching. LibreWolf stays the final verification target, not the daily loop.
 set -euo pipefail
 
-PROJECT="${1:?usage: dev-firefox.sh <project-dir>}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FF_DIR="$HOME/Downloads/firefox"
 PROFILE="$HOME/Downloads/ff-dev-profile"
@@ -23,9 +22,9 @@ fi
 mkdir -p "$PROFILE"
 
 exec "$ROOT/node_modules/.bin/web-ext" run \
-  --source-dir "$ROOT/$PROJECT" \
+  --source-dir "$ROOT" \
   --firefox "$FF_DIR/firefox" \
   --firefox-profile "$PROFILE" \
   --keep-profile-changes \
   --pref browser.tabs.groups.enabled=true \
-  --ignore-files "*.sh" "README.md" "test/**"
+  --ignore-files "*.sh" "*.md" "test" "test/**" "tools" "tools/**" "package*.json" "node_modules/**" "web-ext-artifacts/**"

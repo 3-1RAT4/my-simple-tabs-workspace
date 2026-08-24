@@ -9,7 +9,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
-WEB_EXT="${WEB_EXT:-$(cd .. && pwd)/node_modules/.bin/web-ext}"
+WEB_EXT="${WEB_EXT:-$(pwd)/node_modules/.bin/web-ext}"
 OUT="$HOME/Downloads/my-simple-tabs-workspace-signed.xpi"
 
 : "${AMO_JWT_ISSUER:?set AMO_JWT_ISSUER}"
@@ -18,7 +18,7 @@ OUT="$HOME/Downloads/my-simple-tabs-workspace-signed.xpi"
 "$WEB_EXT" sign \
   --source-dir . \
   --artifacts-dir web-ext-artifacts \
-  --ignore-files "*.sh" "README.md" "test/**" \
+  --ignore-files "*.sh" "*.md" "test" "test/**" "tools" "tools/**" "package*.json" "node_modules/**" "web-ext-artifacts/**" \
   --channel unlisted \
   --api-key "$AMO_JWT_ISSUER" \
   --api-secret "$AMO_JWT_SECRET"
