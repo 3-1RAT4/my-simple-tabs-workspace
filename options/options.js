@@ -19,14 +19,25 @@ function stamp() {
 const COOKIES = { permissions: ['cookies'] }
 
 async function renderPermission() {
-  const granted = await browser.permissions.contains(COOKIES)
+  const { granted, storedContainerTabs } = await browser.runtime.sendMessage({
+    method: 'containerInfo',
+  })
   const state = document.getElementById('perm-state')
   const button = document.getElementById('perm-toggle')
 
+  // Saying how many saved tabs actually use a container turns an abstract
+  // permission question into a concrete one.
+  const affected =
+    storedContainerTabs === 0
+      ? 'No saved tab uses a container, so this changes nothing today.'
+      : `${storedContainerTabs} saved tab${storedContainerTabs === 1 ? '' : 's'} use${
+          storedContainerTabs === 1 ? 's' : ''
+        } a container.`
+
   state.hidden = false
   state.textContent = granted
-    ? 'Granted. Rebuilt tabs return to their containers.'
-    : 'Not granted. Rebuilt tabs return to the default container.'
+    ? `Granted. Rebuilt tabs return to their containers. ${affected}`
+    : `Not granted. Rebuilt tabs return to the default container. ${affected}`
   state.dataset.kind = granted ? 'ok' : ''
   button.textContent = granted ? 'Withdraw permission' : 'Allow container tabs'
 }

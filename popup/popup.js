@@ -677,6 +677,36 @@ async function start() {
     // Falling back to the stylesheet's own values is fine.
   }
   apply(await send('list'))
+  showNotices().catch(() => {})
+}
+
+// Restoring a tab into its container needs the optional cookies permission.
+// When it is missing the tab still comes back, just in the default container,
+// which is quiet enough to look like the add-on lost something. Say so, and
+// offer the permission here: a popup is an extension page, so the request can
+// be made straight from this click.
+async function showNotices() {
+  const { containerNotice } = await send('notices')
+  if (!containerNotice) return
+
+  const bar = document.getElementById('notice')
+  const count = containerNotice.count
+  document.getElementById('notice-text').textContent =
+    `${count} tab${count === 1 ? '' : 's'} reopened outside ${count === 1 ? 'its' : 'their'} container.`
+  bar.hidden = false
+
+  document.getElementById('notice-fix').addEventListener('click', async () => {
+    const granted = await browser.permissions.request({ permissions: ['cookies'] })
+    if (granted) {
+      await send('dismissNotice')
+      bar.hidden = true
+    }
+  })
+
+  document.getElementById('notice-dismiss').addEventListener('click', async () => {
+    await send('dismissNotice')
+    bar.hidden = true
+  })
 }
 
 function applySettings(values) {

@@ -5,6 +5,14 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
+    <p id="notice" class="notice" hidden role="status">
+      <span id="notice-text"></span>
+      <span class="notice-actions">
+        <button id="notice-fix" class="notice-btn">Allow containers</button>
+        <button id="notice-dismiss" class="notice-btn">Dismiss</button>
+      </span>
+    </p>
+
     <input
       id="filter"
       class="filter"

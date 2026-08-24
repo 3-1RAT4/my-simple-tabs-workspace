@@ -295,6 +295,76 @@ const tests = [
     eq(ws.color, 'default', 'bad colour refused')
   }),
 
+  test('losing a container on rebuild is recorded, not swallowed', async () => {
+    // No cookies permission: exactly the state a fresh install is in.
+    const env = boot(['tabs', 'tabGroups', 'sessions', 'storage', 'menus'])
+    const wsId = await env.Workspaces.create()
+    let winId = env.Workspaces.byWs.get(wsId)
+    env.addTab(winId, { url: 'https://a.example', title: 'A', cookieStoreId: 'firefox-container-1' })
+    env.addTab(winId, { url: 'https://b.example', title: 'B', cookieStoreId: 'firefox-container-2' })
+    await env.Workspaces.snapshot(winId)
+
+    await env.browser.windows.remove(winId)
+    env.Workspaces.unbind(winId)
+    env.state.recentlyClosed.length = 0 // force the rebuild path
+    await env.Workspaces.activate(wsId)
+
+    const { containerNotice } = await env.browser.storage.local.get('containerNotice')
+    ok(containerNotice, 'the loss was recorded')
+    eq(containerNotice.count, 2, 'both tabs counted')
+
+    // The tabs still came back, just in the default container.
+    winId = env.Workspaces.byWs.get(wsId)
+    const tabs = await env.browser.tabs.query({ windowId: winId })
+    eq(tabs.length, 3, 'nothing was dropped')
+    ok(tabs.every(t => t.cookieStoreId === 'firefox-default'), 'all in the default container')
+  }),
+
+  test('with the permission, containers survive the rebuild and nothing is recorded', async () => {
+    const env = boot()
+    const wsId = await env.Workspaces.create()
+    let winId = env.Workspaces.byWs.get(wsId)
+    env.addTab(winId, { url: 'https://a.example', title: 'A', cookieStoreId: 'firefox-container-1' })
+    await env.Workspaces.snapshot(winId)
+
+    await env.browser.windows.remove(winId)
+    env.Workspaces.unbind(winId)
+    env.state.recentlyClosed.length = 0
+    await env.Workspaces.activate(wsId)
+
+    const stored = await env.browser.storage.local.get('containerNotice')
+    eq(stored.containerNotice, undefined, 'nothing to report')
+
+    winId = env.Workspaces.byWs.get(wsId)
+    const tabs = await env.browser.tabs.query({ windowId: winId })
+    ok(
+      tabs.some(t => t.cookieStoreId === 'firefox-container-1'),
+      'the container came back'
+    )
+  }),
+
+  test('reopening the remembered window keeps containers without the permission', async () => {
+    const env = boot(['tabs', 'tabGroups', 'sessions', 'storage', 'menus'])
+    const wsId = await env.Workspaces.create()
+    let winId = env.Workspaces.byWs.get(wsId)
+    env.addTab(winId, { url: 'https://a.example', title: 'A', cookieStoreId: 'firefox-container-1' })
+    await env.Workspaces.snapshot(winId)
+
+    // The session restore path: Firefox reopens the window itself.
+    await env.browser.windows.remove(winId)
+    env.Workspaces.unbind(winId)
+    await env.Workspaces.activate(wsId)
+
+    winId = env.Workspaces.byWs.get(wsId)
+    const tabs = await env.browser.tabs.query({ windowId: winId })
+    ok(
+      tabs.some(t => t.cookieStoreId === 'firefox-container-1'),
+      'container intact, no permission needed'
+    )
+    const stored = await env.browser.storage.local.get('containerNotice')
+    eq(stored.containerNotice, undefined, 'and nothing to report')
+  }),
+
   test('workspaces survive a restart via the window session value', async () => {
     const env = boot()
     const wsId = await env.Workspaces.create()

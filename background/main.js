@@ -69,6 +69,34 @@ browser.runtime.onMessage.addListener(async msg => {
       await Util.serial(() => Workspaces.removeSeparator(msg.separatorId))
       return await Util.serial(() => Workspaces.list(windowId))
 
+    case 'notices': {
+      const res = await browser.storage.local.get('containerNotice').catch(() => ({}))
+      const granted = await browser.permissions.contains({ permissions: ['cookies'] })
+      // Nothing to say once the permission is in place.
+      if (granted && res.containerNotice) {
+        await browser.storage.local.remove('containerNotice').catch(() => {})
+        return {}
+      }
+      return { containerNotice: res.containerNotice }
+    }
+
+    case 'dismissNotice':
+      await browser.storage.local.remove('containerNotice').catch(() => {})
+      return {}
+
+    case 'containerInfo': {
+      let stored = 0
+      for (const ws of await Store.loadAll()) {
+        stored += (ws.tabs || []).filter(
+          t => t.cookieStoreId && t.cookieStoreId !== 'firefox-default'
+        ).length
+      }
+      return {
+        granted: await browser.permissions.contains({ permissions: ['cookies'] }),
+        storedContainerTabs: stored,
+      }
+    }
+
     case 'getSettings':
       return { settings: await Settings.load(), schema: Settings.SCHEMA }
 

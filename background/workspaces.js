@@ -234,11 +234,15 @@ const Workspaces = {
       }
     }
 
+    let droppedContainers = 0
     for (let i = 1; i < saved.length; i++) {
       const entry = saved[i]
-      const tab = await Workspaces._createTab(win.id, entry, i, settings)
-      if (tab) created.push({ tab, entry })
+      const result = await Workspaces._createTab(win.id, entry, i, settings)
+      if (result.droppedContainer) droppedContainers++
+      if (result.tab) created.push({ tab: result.tab, entry })
     }
+
+    await Workspaces._noteDroppedContainers(droppedContainers)
 
     await Groups.rebuild(
       win.id,
@@ -250,6 +254,17 @@ const Workspaces = {
     if (wanted) await browser.tabs.update(wanted.tab.id, { active: true }).catch(() => {})
 
     await Workspaces.snapshot(win.id)
+  },
+
+  // Rebuilding a tab into its container needs the optional cookies permission.
+  // Without it the tab still comes back, in the default container, which is
+  // easy to miss until a logged-in site asks for a password. Recording it lets
+  // the popup say so and offer the permission.
+  async _noteDroppedContainers(count) {
+    if (!count) return
+    await browser.storage.local
+      .set({ containerNotice: { count, at: Date.now() } })
+      .catch(() => {})
   },
 
   // Finds the closed window belonging to this workspace and reopens it.
@@ -335,19 +350,21 @@ const Workspaces = {
     }
 
     try {
-      return await browser.tabs.create(withContainer)
+      return { tab: await browser.tabs.create(withContainer) }
     } catch (err) {
       if (withContainer.cookieStoreId) {
+        // A tab in the wrong container beats no tab, but the caller has to know
+        // it happened: silently dropping containers looks like data loss.
         Diagnostics.warn('container unavailable, restoring in default:', err)
         try {
-          return await browser.tabs.create(base)
+          return { tab: await browser.tabs.create(base), droppedContainer: true }
         } catch (err2) {
           Diagnostics.warn('could not restore tab:', entry.url, err2)
-          return null
+          return { tab: null }
         }
       }
       Diagnostics.warn('could not restore tab:', entry.url, err)
-      return null
+      return { tab: null }
     }
   },
 

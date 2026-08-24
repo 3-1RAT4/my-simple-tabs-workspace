@@ -121,7 +121,13 @@ kept in full. A checkbox restores the detail when a specific page is the bug.
 | `storage` | workspace names, colours, ordering and snapshots |
 | `tabGroups` | keep native tab groups through a close and reopen |
 | `menus` | the *Move tab to workspace* item |
-| `cookies` (optional) | rebuild a tab in its container after a restart. Asked for from the options page, never at install |
+| `cookies` (optional) | rebuild a tab in its container after a restart. Asked for from the options page or the popup, never at install |
+
+Without the `cookies` permission a rebuilt tab still comes back, in the default
+container. That only happens on the rebuild path: reopening a window Firefox
+still remembers keeps containers either way. When it does happen the popup says
+so and offers the permission, rather than leaving it to be discovered by a site
+asking for a password.
 
 No host permissions, no content scripts, and nothing loaded from the network.
 The content security policy is declared explicitly rather than relying on the

@@ -68,6 +68,47 @@ body {
   font-size: var(--font);
 }
 
+/* ---- notices ---- */
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: calc(var(--gap) * 1.5) calc(var(--gap) * 1.5) 0;
+  padding: calc(var(--gap) * 1.5);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-left: 3px solid var(--accent);
+  color: var(--fg);
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.notice-actions {
+  display: flex;
+  gap: var(--gap);
+}
+
+.notice-btn {
+  padding: calc(var(--gap) * 0.8) calc(var(--gap) * 1.5);
+  border: 0;
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.95em;
+  cursor: pointer;
+}
+
+.notice-btn:hover {
+  background: var(--raised);
+}
+
+.notice-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* ---- find ---- */
 
 .filter {
