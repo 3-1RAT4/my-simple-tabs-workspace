@@ -1,0 +1,17 @@
+{
+  "name": "firefox-addons",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Workspace for browser extensions, with a shared test harness and dev tooling.",
+  "scripts": {
+    "lint": "node tools/lint.mjs",
+    "test": "node tools/test.mjs",
+    "dev": "./tools/dev-firefox.sh",
+    "env": "./tools/env-report.sh"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "web-ext": "^8.3.0"
+  }
+}

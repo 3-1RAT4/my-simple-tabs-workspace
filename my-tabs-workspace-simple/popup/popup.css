@@ -1,0 +1,381 @@
+/* A panel that belongs inside Firefox.
+   Colour is the only thing that speaks at rest: every control stays invisible
+   until the row is hovered or focused, so the list reads as identity first. */
+
+:root {
+  --fg: #15141a;
+  --fg-dim: #5b5b66;
+  --bg: #ffffff;
+  --sunken: #f0f0f4;
+  --raised: #ffffff;
+  --border: #cfcfd8;
+  --accent: #0060df;
+  --danger: #c50042;
+
+  --tint-rest: 10%;
+  --tint-hover: 18%;
+  --tint-current: 28%;
+
+  --c-default: #8f8f9d;
+  --c-blue: #37adff;
+  --c-purple: #af51f5;
+  --c-cyan: #00c8d7;
+  --c-green: #51cd00;
+  --c-yellow: #ffcb00;
+  --c-orange: #ff9f00;
+  --c-red: #ff613d;
+  --c-pink: #ff4bda;
+  --c-grey: #8f8f9d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #fbfbfe;
+    --fg-dim: #b8b8c4;
+    --bg: #2b2a33;
+    --sunken: #1c1b22;
+    --raised: #42414d;
+    --border: #52525e;
+    --accent: #00ddff;
+    --danger: #ff9aa2;
+
+    --tint-rest: 16%;
+    --tint-hover: 26%;
+    --tint-current: 38%;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 288px;
+  background: var(--bg);
+  color: var(--fg);
+  font: message-box;
+  font-size: 13px;
+}
+
+/* ---- find ---- */
+
+.filter {
+  width: calc(100% - 12px);
+  margin: 6px 6px 0;
+  padding: 5px 8px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--sunken);
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.filter:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ---- the list ---- */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.row {
+  --tint: var(--c-default);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px 7px 9px;
+  border-left: 3px solid transparent;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.row[data-color='blue'] { --tint: var(--c-blue); }
+.row[data-color='purple'] { --tint: var(--c-purple); }
+.row[data-color='cyan'] { --tint: var(--c-cyan); }
+.row[data-color='green'] { --tint: var(--c-green); }
+.row[data-color='yellow'] { --tint: var(--c-yellow); }
+.row[data-color='orange'] { --tint: var(--c-orange); }
+.row[data-color='red'] { --tint: var(--c-red); }
+.row[data-color='pink'] { --tint: var(--c-pink); }
+.row[data-color='grey'] { --tint: var(--c-grey); }
+
+.row:not([data-color='default']) {
+  border-left-color: var(--tint);
+  background: color-mix(in srgb, var(--tint) var(--tint-rest), transparent);
+}
+
+.row:hover,
+.row[data-focused='true'] {
+  background: color-mix(in srgb, var(--tint) var(--tint-hover), transparent);
+}
+
+.row[data-current='true'] {
+  background: color-mix(in srgb, var(--tint) var(--tint-current), transparent);
+  font-weight: 600;
+}
+
+.row[data-focused='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.row[data-open='false'] {
+  opacity: 0.72;
+}
+
+.row[data-dragging='true'] {
+  opacity: 0.35;
+}
+
+/* ---- row contents ---- */
+
+.chip {
+  width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--fg-dim);
+}
+
+.row[data-current='true'] .chip {
+  color: var(--fg);
+}
+
+.name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The tab count is the one number here, so it stays legible while the
+   controls hide. Tabular figures stop it jittering as counts change. */
+.count {
+  color: var(--fg-dim);
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.row[data-open='false'] .count::after {
+  content: ' saved';
+  font-size: 11px;
+}
+
+/* Controls stay out of the way until the row is engaged. */
+.actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+}
+
+.row:hover .actions,
+.row[data-focused='true'] .actions,
+.row:focus-within .actions {
+  opacity: 1;
+}
+
+.act {
+  border: 0;
+  background: transparent;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.act:hover {
+  background: color-mix(in srgb, var(--fg) 12%, transparent);
+  color: var(--fg);
+}
+
+.act:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.del[data-armed='true'] {
+  background: var(--danger);
+  color: var(--bg);
+  opacity: 1;
+  width: auto;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+/* ---- editor ---- */
+
+.editor {
+  list-style: none;
+  margin: 0 0 4px 3px;
+  padding: 8px;
+  background: var(--sunken);
+  border-radius: 0 4px 4px 0;
+}
+
+.rename {
+  width: 100%;
+  padding: 5px 6px;
+  margin-bottom: 8px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+.rename:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.swatches,
+.icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.swatches {
+  margin-bottom: 8px;
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: var(--sw, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 25%, transparent);
+}
+
+.swatch[data-color='blue'] { --sw: var(--c-blue); }
+.swatch[data-color='purple'] { --sw: var(--c-purple); }
+.swatch[data-color='cyan'] { --sw: var(--c-cyan); }
+.swatch[data-color='green'] { --sw: var(--c-green); }
+.swatch[data-color='yellow'] { --sw: var(--c-yellow); }
+.swatch[data-color='orange'] { --sw: var(--c-orange); }
+.swatch[data-color='red'] { --sw: var(--c-red); }
+.swatch[data-color='pink'] { --sw: var(--c-pink); }
+.swatch[data-color='grey'] { --sw: var(--c-grey); }
+
+.icon-opt {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  background: var(--bg);
+  color: var(--fg-dim);
+}
+
+.icon-opt:hover {
+  background: var(--raised);
+}
+
+.swatch[data-selected='true'],
+.icon-opt[data-selected='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.swatch:focus-visible,
+.icon-opt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---- footer ---- */
+
+.empty {
+  margin: 0;
+  padding: 10px;
+  color: var(--fg-dim);
+  text-align: center;
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 6px;
+}
+
+.new {
+  width: 100%;
+  padding: 6px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--sunken);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.new:hover {
+  background: var(--raised);
+}
+
+.new:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 0 10px 7px;
+  color: var(--fg-dim);
+  font-size: 11px;
+}
+
+.meta a {
+  color: var(--fg-dim);
+  flex-shrink: 0;
+}
+
+.diagout {
+  width: calc(100% - 12px);
+  height: 90px;
+  margin: 0 6px 6px;
+  font-family: monospace;
+  font-size: 10px;
+  background: var(--sunken);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.error {
+  margin: 0;
+  padding: 6px 10px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .row,
+  .act,
+  .actions,
+  .new {
+    transition: background-color 120ms ease, opacity 120ms ease;
+  }
+}

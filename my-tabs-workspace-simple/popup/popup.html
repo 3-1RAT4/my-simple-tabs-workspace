@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <input
+      id="filter"
+      class="filter"
+      type="search"
+      placeholder="Find a workspace"
+      aria-label="Find a workspace"
+      hidden
+    />
+
+    <ul id="list" class="list" role="listbox" aria-label="Workspaces"></ul>
+
+    <p id="empty" class="empty" hidden>No workspace matches that.</p>
+
+    <div class="footer">
+      <button id="new" class="new">New workspace</button>
+    </div>
+
+    <p class="meta">
+      <span id="hint" class="hint"></span>
+      <a href="#" id="diag">diagnostics</a>
+    </p>
+
+    <textarea id="diagout" class="diagout" hidden readonly aria-label="Diagnostics"></textarea>
+    <p id="error" class="error" hidden role="alert"></p>
+
+    <script src="../shared/palette.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
