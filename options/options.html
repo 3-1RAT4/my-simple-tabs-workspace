@@ -56,7 +56,8 @@
         <h2>Restore a backup</h2>
         <p>
           Restored workspaces arrive closed. Open one from the toolbar popup to bring its window
-          back.
+          back. Because there is no closed window behind them, their tabs are rebuilt, and putting
+          a tab back in its container needs permission to read cookies.
         </p>
 
         <div class="field">
@@ -77,6 +78,11 @@
       </section>
 
       <p id="status" class="status" hidden role="status"></p>
+
+      <p id="import-containers" class="status" hidden>
+        <span id="import-containers-text"></span>
+        <button id="import-containers-fix" class="btn">Allow containers</button>
+      </p>
 
       <section class="about">
         <h2>About the file</h2>

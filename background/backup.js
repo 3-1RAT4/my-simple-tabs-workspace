@@ -225,7 +225,24 @@ const Backup = {
       await Workspaces.snapshot(win.id)
     }
 
-    return { imported: clean.length, mode }
+    // Imported workspaces have no closed window behind them, so opening one
+    // always rebuilds its tabs, and rebuilding into a container needs the
+    // cookies permission. Report how many tabs that affects so the page can
+    // ask before the containers are quietly lost.
+    const containerTabs = clean.reduce(
+      (total, ws) =>
+        total +
+        (ws.tabs || []).filter(t => t.cookieStoreId && t.cookieStoreId !== 'firefox-default')
+          .length,
+      0
+    )
+
+    return {
+      imported: clean.length,
+      mode,
+      containerTabs,
+      canRestoreContainers: await browser.permissions.contains({ permissions: ['cookies'] }),
+    }
   },
 
   // ---- settings, kept in their own file ------------------------------------

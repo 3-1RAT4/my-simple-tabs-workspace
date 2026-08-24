@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "My Simple Tabs Workspace",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "One workspace per window. A global list of workspaces, each opening in its own window.",
   "browser_specific_settings": {
     "gecko": {

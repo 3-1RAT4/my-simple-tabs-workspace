@@ -6,6 +6,15 @@ import { test, run, eq, ok } from './lib/test-kit.mjs'
 const ROOT = new URL('..', import.meta.url).pathname
 const PERMS = ['tabs', 'cookies', 'tabGroups', 'sessions', 'storage', 'menus']
 
+function bootWithout() {
+  const fake = createFakeBrowser({
+    permissions: ['tabs', 'tabGroups', 'sessions', 'storage', 'menus'],
+    version: '1.5.3',
+  })
+  const { globals } = loadExtension(ROOT, fake.browser)
+  return { ...fake, ...globals(['Workspaces', 'Store', 'Backup', 'Palette']) }
+}
+
 function boot() {
   const fake = createFakeBrowser({ permissions: PERMS, version: '1.0.7' })
   const { globals } = loadExtension(ROOT, fake.browser)
@@ -255,6 +264,57 @@ const tests = [
     await seed(env)
     const doc = await env.Backup.exportAll()
     eq(doc.format, 'my-simple-tabs-workspace', 'current spelling on the way out')
+  }),
+
+  test('containers survive the whole round trip when allowed', async () => {
+    const env = boot()
+    const wsId = await env.Workspaces.create({ name: 'Work' })
+    const winId = env.Workspaces.byWs.get(wsId)
+    env.addTab(winId, { url: 'https://a.example', title: 'A', cookieStoreId: 'firefox-container-1' })
+    await env.Workspaces.snapshot(winId)
+
+    const doc = await env.Backup.exportAll()
+    eq(doc.workspaces[0].tabs[1].cookieStoreId, 'firefox-container-1', 'in the file')
+
+    const fresh = boot()
+    await fresh.Backup.importAll(JSON.stringify(doc), 'replace')
+    const stored = (await fresh.Store.loadAll()).find(w => w.name === 'Work')
+    eq(stored.tabs[1].cookieStoreId, 'firefox-container-1', 'after import')
+
+    await fresh.Workspaces.activate(stored.id)
+    const tabs = await fresh.browser.tabs.query({
+      windowId: fresh.Workspaces.byWs.get(stored.id),
+    })
+    ok(tabs.some(t => t.cookieStoreId === 'firefox-container-1'), 'after reopening')
+  }),
+
+  test('an import reports the container tabs it brought in', async () => {
+    const env = boot()
+    const wsId = await env.Workspaces.create({ name: 'Work' })
+    const winId = env.Workspaces.byWs.get(wsId)
+    env.addTab(winId, { url: 'https://a.example', title: 'A', cookieStoreId: 'firefox-container-1' })
+    env.addTab(winId, { url: 'https://b.example', title: 'B', cookieStoreId: 'firefox-container-2' })
+    env.addTab(winId, { url: 'https://c.example', title: 'C' })
+    await env.Workspaces.snapshot(winId)
+    const doc = await env.Backup.exportAll()
+
+    // A fresh install has no cookies permission, which is the case that matters.
+    const fresh = bootWithout()
+    const result = await fresh.Backup.importAll(JSON.stringify(doc), 'replace')
+
+    eq(result.containerTabs, 2, 'counted the tabs that need the permission')
+    eq(result.canRestoreContainers, false, 'and reported that it is missing')
+  }),
+
+  test('an import with nothing in a container says so', async () => {
+    const env = bootWithout()
+    const doc = {
+      format: 'my-simple-tabs-workspace',
+      formatVersion: 1,
+      workspaces: [{ id: 'a', name: 'Plain', tabs: [{ url: 'https://x.example' }] }],
+    }
+    const result = await env.Backup.importAll(JSON.stringify(doc), 'replace')
+    eq(result.containerTabs, 0, 'nothing to warn about')
   }),
 
   test('a workspace with no name is skipped rather than imported blank', async () => {

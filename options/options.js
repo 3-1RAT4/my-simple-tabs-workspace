@@ -16,6 +16,31 @@ function stamp() {
 
 // ---- optional permissions ---------------------------------------------------
 
+// Said at the moment it matters: right after a restore that contains container
+// tabs, while the workspaces are still closed and nothing has been lost yet.
+function showContainerPrompt(result) {
+  const box = document.getElementById('import-containers')
+  if (!result.containerTabs || result.canRestoreContainers) {
+    box.hidden = true
+    return
+  }
+
+  const n = result.containerTabs
+  document.getElementById('import-containers-text').textContent =
+    `${n} restored tab${n === 1 ? '' : 's'} belong${n === 1 ? 's' : ''} to a container. ` +
+    `Without permission to read cookies ${n === 1 ? 'it' : 'they'} will reopen in the default ` +
+    `container. Nothing is lost yet: the containers are still recorded.`
+  box.hidden = false
+}
+
+document.getElementById('import-containers-fix').addEventListener('click', async () => {
+  const granted = await browser.permissions.request(COOKIES)
+  if (!granted) return
+  document.getElementById('import-containers').hidden = true
+  await renderPermission()
+  say('Containers will be restored.')
+})
+
 const COOKIES = { permissions: ['cookies'] }
 
 async function renderPermission() {
@@ -201,6 +226,7 @@ document.getElementById('import').addEventListener('change', async event => {
         ? `Replaced everything with ${result.imported} workspaces.`
         : `Added ${result.imported} workspaces.`
     )
+    showContainerPrompt(result)
   } catch (err) {
     say(String(err?.message ?? err), 'error')
   } finally {
