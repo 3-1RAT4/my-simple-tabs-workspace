@@ -1,23 +1,14 @@
 // Scenarios for the 1:1 window/workspace model. Each one exists because it
 // either broke in a real browser or is a rule we must not regress.
-import { createFakeBrowser, loadBackground } from '../../lib/fake-browser.mjs'
+import { createFakeBrowser, loadExtension } from '../../lib/fake-browser.mjs'
 import { test, run, eq, ok } from '../../lib/test-kit.mjs'
 
-const DIR = new URL('../background/', import.meta.url).pathname
-// Same order as manifest.json's background.scripts.
-const SCRIPTS = [
-  '../shared/palette.js',
-  'util.js',
-  'store.js',
-  'diagnostics.js',
-  'groups.js',
-  'workspaces.js',
-]
+const ROOT = new URL('..', import.meta.url).pathname
 const PERMS = ['tabs', 'cookies', 'tabGroups', 'sessions', 'storage', 'menus']
 
 function boot(permissions = PERMS) {
   const fake = createFakeBrowser({ permissions })
-  const { globals } = loadBackground(DIR, SCRIPTS, fake.browser)
+  const { globals } = loadExtension(ROOT, fake.browser)
   return { ...fake, ...globals(['Workspaces', 'Store', 'Groups', 'Util']) }
 }
 

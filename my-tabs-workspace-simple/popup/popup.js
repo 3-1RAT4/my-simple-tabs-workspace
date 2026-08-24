@@ -6,6 +6,7 @@ const emptyEl = document.getElementById('empty')
 const errEl = document.getElementById('error')
 const hintEl = document.getElementById('hint')
 
+let settings = null
 let workspaces = []
 let visible = []
 let focusIndex = 0
@@ -237,6 +238,11 @@ function setFocus(index, scroll = true, direction = 1) {
 // says what the next click does.
 let armedTimer
 function armDelete(button, ws) {
+  if (settings && settings.behavior.confirmDelete === false) {
+    send('delete', { workspaceId: ws.id }).then(apply)
+    return
+  }
+
   if (button.dataset.armed) {
     send('delete', { workspaceId: ws.id }).then(apply)
     return
@@ -372,7 +378,11 @@ document.addEventListener('keydown', event => {
       filterEl.value = ''
       apply()
     }
-  } else if (/^[1-9]$/.test(event.key) && document.activeElement !== filterEl) {
+  } else if (
+    /^[1-9]$/.test(event.key) &&
+    document.activeElement !== filterEl &&
+    settings?.behavior.quickSwitchKeys !== false
+  ) {
     const target = visible.filter(isWorkspace)[Number(event.key) - 1]
     if (target) {
       event.preventDefault()
@@ -453,4 +463,24 @@ document.getElementById('diag').addEventListener('click', async event => {
   }
 })
 
-send('list').then(apply).catch(() => {})
+// Settings arrive before the first paint so the popup never renders at one
+// size and then jumps to another.
+async function start() {
+  try {
+    const res = await send('getSettings')
+    settings = res.settings
+    applySettings(settings)
+  } catch {
+    // Falling back to the stylesheet's own values is fine.
+  }
+  apply(await send('list'))
+}
+
+function applySettings(values) {
+  const root = document.documentElement
+  root.style.setProperty('--scale', values.ui.scale)
+  root.style.setProperty('--text', values.ui.text)
+  root.style.setProperty('--list-height', `${values.ui.listHeight}px`)
+}
+
+start().catch(() => {})

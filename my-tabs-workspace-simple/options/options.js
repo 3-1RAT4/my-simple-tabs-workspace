@@ -14,19 +14,128 @@ function stamp() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
+// ---- settings ---------------------------------------------------------------
+
+// The schema comes from the background, so this page renders whatever the
+// add-on currently supports without needing to know the list itself.
+async function renderSettings() {
+  const { settings, schema } = await browser.runtime.sendMessage({ method: 'getSettings' })
+  const host = document.getElementById('settings')
+  host.textContent = ''
+
+  for (const [path, spec] of Object.entries(schema)) {
+    const value = path.split('.').reduce((node, key) => node?.[key], settings)
+
+    const row = document.createElement('div')
+    row.className = 'setting'
+
+    const label = document.createElement('span')
+    label.className = 'setting-label'
+    label.textContent = spec.label
+
+    const control = document.createElement('span')
+    control.className = 'setting-control'
+
+    const input = document.createElement('input')
+    input.id = `set-${path}`
+    label.setAttribute('for', input.id)
+
+    if (spec.kind === 'boolean') {
+      input.type = 'checkbox'
+      input.checked = !!value
+    } else {
+      input.type = 'range'
+      input.min = spec.min
+      input.max = spec.max
+      input.step = spec.step
+      input.value = value
+    }
+
+    const readout = document.createElement('span')
+    readout.className = 'value'
+    const show = () => {
+      readout.textContent = spec.kind === 'boolean' ? '' : input.value
+    }
+    show()
+
+    input.addEventListener('input', show)
+    input.addEventListener('change', async () => {
+      const next = spec.kind === 'boolean' ? input.checked : Number(input.value)
+      const res = await browser.runtime.sendMessage({
+        method: 'updateSettings',
+        values: { [path]: next },
+      })
+      // Echo back what was stored: the background may have clamped it.
+      const stored = path.split('.').reduce((node, key) => node?.[key], res.settings)
+      if (spec.kind === 'boolean') input.checked = stored
+      else input.value = stored
+      show()
+      say('Saved.')
+    })
+
+    control.append(input, readout)
+
+    const help = document.createElement('p')
+    help.className = 'setting-help'
+    help.textContent = spec.help
+
+    row.append(label, control, help)
+    host.append(row)
+  }
+}
+
+document.getElementById('reset').addEventListener('click', async () => {
+  if (!confirm('Put every setting back to its default?')) return
+  await browser.runtime.sendMessage({ method: 'resetSettings' })
+  await renderSettings()
+  say('Settings reset.')
+})
+
+document.getElementById('export-settings').addEventListener('click', async () => {
+  try {
+    const doc = await browser.runtime.sendMessage({ method: 'backupSettings' })
+    download(doc, `simple-tab-workspaces-settings-${stamp()}.json`)
+    say('Saved your settings.')
+  } catch (err) {
+    say(String(err?.message ?? err), 'error')
+  }
+})
+
+document.getElementById('import-settings').addEventListener('change', async event => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  try {
+    const text = await file.text()
+    const result = await browser.runtime.sendMessage({ method: 'restoreSettings', text })
+    if (result?.error) throw new Error(result.error)
+    await renderSettings()
+    say('Settings restored.')
+  } catch (err) {
+    say(String(err?.message ?? err), 'error')
+  } finally {
+    event.target.value = ''
+  }
+})
+
+// ---- workspaces -------------------------------------------------------------
+
+function download(doc, filename) {
+  const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+
+  // Revoked late so the download has certainly started.
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
 document.getElementById('export').addEventListener('click', async () => {
   try {
     const doc = await browser.runtime.sendMessage({ method: 'backup' })
-    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `simple-tab-workspaces-${stamp()}.json`
-    link.click()
-
-    // Revoked late so the download has certainly started.
-    setTimeout(() => URL.revokeObjectURL(url), 10000)
+    download(doc, `simple-tab-workspaces-${stamp()}.json`)
     say(`Saved ${doc.workspaces.length} workspaces.`)
   } catch (err) {
     say(String(err?.message ?? err), 'error')
@@ -61,3 +170,5 @@ document.getElementById('import').addEventListener('change', async event => {
     event.target.value = ''
   }
 })
+
+renderSettings().catch(err => say(String(err?.message ?? err), 'error'))

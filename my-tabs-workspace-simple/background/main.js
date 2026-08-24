@@ -59,6 +59,26 @@ browser.runtime.onMessage.addListener(async msg => {
       await Util.serial(() => Workspaces.removeSeparator(msg.separatorId))
       return await Util.serial(() => Workspaces.list(windowId))
 
+    case 'getSettings':
+      return { settings: await Settings.load(), schema: Settings.SCHEMA }
+
+    case 'updateSettings':
+      return { settings: await Settings.update(msg.values) }
+
+    case 'resetSettings':
+      return { settings: await Settings.reset() }
+
+    case 'backupSettings':
+      return await Backup.exportSettings()
+
+    case 'restoreSettings':
+      try {
+        return await Backup.importSettings(msg.text)
+      } catch (err) {
+        Diagnostics.warn('settings restore refused:', err)
+        return { error: String(err?.message ?? err) }
+      }
+
     case 'backup':
       return await Util.serial(() => Backup.exportAll())
 

@@ -8,6 +8,7 @@
   --scale: 2;
   --text: 1.5;
 
+  --list-height: 460px;
   --base: 13px;
   --font: calc(var(--base) * var(--text));
   --gap: calc(4px * var(--scale));
@@ -91,7 +92,7 @@ body {
   list-style: none;
   margin: 0;
   padding: calc(var(--gap) * 1.5);
-  max-height: 460px;
+  max-height: var(--list-height);
   overflow-y: auto;
 }
 

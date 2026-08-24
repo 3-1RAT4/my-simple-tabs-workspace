@@ -178,7 +178,10 @@ const Workspaces = {
     // Prefer letting Firefox reopen the actual closed window. That consumes the
     // tab group it saved when the window closed, instead of leaving it orphaned
     // beside a new one, and brings back navigation history and scroll position.
-    const restoredId = await Workspaces._restoreFromSession(ws)
+    const settings = await Settings.load()
+    const restoredId = settings.behavior.preferSessionRestore
+      ? await Workspaces._restoreFromSession(ws)
+      : null
     if (restoredId !== null) {
       await Workspaces.bind(restoredId, wsId)
       await Workspaces._ensureGroups(restoredId, ws)
@@ -207,7 +210,7 @@ const Workspaces = {
 
     for (let i = 1; i < saved.length; i++) {
       const entry = saved[i]
-      const tab = await Workspaces._createTab(win.id, entry, i)
+      const tab = await Workspaces._createTab(win.id, entry, i, settings)
       if (tab) created.push({ tab, entry })
     }
 
@@ -290,11 +293,11 @@ const Workspaces = {
   // Creating a tab can fail for reasons worth retrying past: a container that
   // no longer exists, or a url the browser refuses. Losing one tab must not
   // cost the rest of the workspace.
-  async _createTab(windowId, entry, index) {
+  async _createTab(windowId, entry, index, settings) {
     const base = { windowId, index, pinned: !!entry.pinned, active: false }
     if (!Util.isBlankURL(entry.url)) {
       base.url = entry.url
-      if (!entry.pinned) {
+      if (!entry.pinned && settings?.behavior?.restoreUnloaded !== false) {
         base.discarded = true
         base.title = entry.title
       }

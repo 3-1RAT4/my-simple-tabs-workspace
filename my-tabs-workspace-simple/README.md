@@ -41,6 +41,18 @@ workspace is open its tabs are simply that window's tabs.
 
 ## Backup
 
+Two separate files, because they answer different questions. Workspaces are your
+tabs; settings are how the add-on behaves. Carrying a setup to another profile
+should not bring that profile's tabs with it.
+
+| File | `format` | Holds |
+|---|---|---|
+| Workspaces | `simple-tab-workspaces` | workspaces, tabs, groups, separators, order |
+| Settings | `simple-tab-workspaces-settings` | the settings above |
+
+Each refuses to be restored as the other, naming what the file actually is and
+which control to use.
+
 Add-ons manager -> Simple Tab Workspaces -> Preferences, or `backup` in the popup
 footer. Saves every workspace, its tabs and its tab groups to a JSON file, and
 restores one either alongside the current workspaces or in place of them.
@@ -117,16 +129,26 @@ Two paths, in order:
   skipped when a workspace reopens.
 - Tabs are restored unloaded, the way session restore does.
 
-## Sizing
+## Settings
 
-The popup's size is two CSS variables at the top of `popup/popup.css`:
+Add-ons manager -> Preferences. Every macro adjustment lives in one schema,
+`background/settings.js`, which supplies the default, the bounds and the
+validation. The options page renders whatever that schema declares, so adding a
+setting means adding one entry.
 
-```css
---scale: 2;    /* the box and its spacing */
---text: 1.5;   /* type */
-```
+| Setting | Default | Range |
+|---|---|---|
+| Popup size | 2 | 1 - 3 |
+| Text size | 1.5 | 1 - 3 |
+| List height | 460px | 200 - 560 |
+| Reopen the original window | on | |
+| Restore tabs unloaded | on | |
+| Confirm before deleting | on | |
+| Number key shortcuts | on | |
 
-Nothing else hard-codes a size, so either can be changed on its own.
+Values are validated where they are stored, not where they are typed. A number
+out of range is clamped; a value of the wrong type falls back to its default. A
+hand-edited settings file cannot leave the add-on unable to render.
 
 ## Files
 

@@ -7,7 +7,29 @@
   </head>
   <body>
     <main>
-      <h1>Backup</h1>
+      <h1>Simple Tab Workspaces</h1>
+
+      <section>
+        <h2>Settings</h2>
+        <p>Changes save as you make them and apply the next time the popup opens.</p>
+        <div id="settings" class="settings"></div>
+        <button id="reset" class="btn">Reset to defaults</button>
+      </section>
+
+      <section>
+        <h2>Settings file</h2>
+        <p>
+          Settings are backed up on their own, separately from workspaces, so you can carry a setup
+          to another profile without touching the tabs there.
+        </p>
+        <button id="export-settings" class="btn">Save settings file</button>
+        <label class="btn file">
+          Restore settings
+          <input id="import-settings" type="file" accept="application/json,.json" />
+        </label>
+      </section>
+
+      <h2 class="rule">Workspaces</h2>
 
       <section>
         <h2>Save a backup</h2>

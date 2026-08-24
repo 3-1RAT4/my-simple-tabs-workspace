@@ -1,23 +1,14 @@
 // The backup format has to survive version drift in both directions, so most
 // of these are about what happens when the file and the reader disagree.
-import { createFakeBrowser, loadBackground } from '../../lib/fake-browser.mjs'
+import { createFakeBrowser, loadExtension } from '../../lib/fake-browser.mjs'
 import { test, run, eq, ok } from '../../lib/test-kit.mjs'
 
-const DIR = new URL('../background/', import.meta.url).pathname
-const SCRIPTS = [
-  '../shared/palette.js',
-  'util.js',
-  'store.js',
-  'diagnostics.js',
-  'groups.js',
-  'workspaces.js',
-  'backup.js',
-]
+const ROOT = new URL('..', import.meta.url).pathname
 const PERMS = ['tabs', 'cookies', 'tabGroups', 'sessions', 'storage', 'menus']
 
 function boot() {
   const fake = createFakeBrowser({ permissions: PERMS, version: '1.0.7' })
-  const { globals } = loadBackground(DIR, SCRIPTS, fake.browser)
+  const { globals } = loadExtension(ROOT, fake.browser)
   return { ...fake, ...globals(['Workspaces', 'Store', 'Backup', 'Palette']) }
 }
 

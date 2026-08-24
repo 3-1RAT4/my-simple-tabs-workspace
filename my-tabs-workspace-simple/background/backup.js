@@ -31,7 +31,13 @@
 
 const Backup = {
   FORMAT: 'simple-tab-workspaces',
+  SETTINGS_FORMAT: 'simple-tab-workspaces-settings',
   VERSION: 1,
+  SETTINGS_VERSION: 1,
+
+  // Settings migrations are kept apart from workspace ones: the two files
+  // change for different reasons and should be free to move at their own pace.
+  SETTINGS_MIGRATIONS: {},
 
   // Fields this version understands. Anything else on a workspace is unknown
   // and rides along untouched.
@@ -100,6 +106,9 @@ const Backup = {
     // lead to different next steps, so they get different messages.
     if (!doc || typeof doc !== 'object' || Array.isArray(doc) || typeof doc.format !== 'string') {
       throw new Error('That file is not a backup.')
+    }
+    if (doc.format === Backup.SETTINGS_FORMAT) {
+      throw new Error('That is a settings backup. Restore it under Settings instead.')
     }
     if (doc.format !== Backup.FORMAT) {
       throw new Error('That backup was made by a different add-on.')
@@ -199,6 +208,70 @@ const Backup = {
     }
 
     return { imported: clean.length, mode }
+  },
+
+  // ---- settings, kept in their own file ------------------------------------
+
+  async exportSettings() {
+    return {
+      format: Backup.SETTINGS_FORMAT,
+      formatVersion: Backup.SETTINGS_VERSION,
+      app: {
+        name: browser.runtime.getManifest().name,
+        version: browser.runtime.getManifest().version,
+      },
+      exportedAt: new Date().toISOString(),
+      settings: await Settings.load(),
+    }
+  },
+
+  parseSettings(text) {
+    let doc
+    try {
+      doc = JSON.parse(text)
+    } catch {
+      throw new Error('That file is not JSON.')
+    }
+
+    if (!doc || typeof doc !== 'object' || Array.isArray(doc) || typeof doc.format !== 'string') {
+      throw new Error('That file is not a settings backup.')
+    }
+    if (doc.format === Backup.FORMAT) {
+      throw new Error('That is a workspace backup. Restore it under Restore a backup instead.')
+    }
+    if (doc.format !== Backup.SETTINGS_FORMAT) {
+      throw new Error('That backup was made by a different add-on.')
+    }
+
+    const version = Number(doc.formatVersion)
+    if (!Number.isInteger(version) || version < 1) {
+      throw new Error('That backup has no usable version number.')
+    }
+    if (version > Backup.SETTINGS_VERSION) {
+      throw new Error(
+        `That settings backup is format version ${version}; this version reads up to ${Backup.SETTINGS_VERSION}. Update the add-on to restore it.`
+      )
+    }
+
+    let current = doc
+    for (let v = version; v < Backup.SETTINGS_VERSION; v++) {
+      const step = Backup.SETTINGS_MIGRATIONS[v]
+      if (!step) throw new Error(`No way to read settings format version ${v}.`)
+      current = step(current)
+    }
+
+    if (!current.settings || typeof current.settings !== 'object') {
+      throw new Error('That backup has no settings in it.')
+    }
+    return current
+  },
+
+  async importSettings(text) {
+    const doc = Backup.parseSettings(text)
+    // Settings.save validates every value, so a hand-edited file cannot put
+    // the add-on into a state it cannot render.
+    const applied = await Settings.save(doc.settings)
+    return { settings: applied }
   },
 
   // Everything from a file is untrusted, including files this add-on wrote:
