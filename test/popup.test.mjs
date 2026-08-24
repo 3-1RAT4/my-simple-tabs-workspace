@@ -23,6 +23,7 @@ function mount(workspaces) {
           getManifest: () => ({ version: '1.0.1' }),
           sendMessage: async msg => {
             sent.push(msg)
+            if (msg.method === 'nextName') return { name: 'Workspace 4' }
             return workspaces
           },
         },
@@ -434,6 +435,115 @@ const tests = [
       .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
     await new Promise(r => setTimeout(r, 60))
     eq(sent.find(m => m.method === 'deleteSeparator')?.separatorId, 'sep-1', 'by id')
+  }),
+
+  test('New workspace opens a form instead of creating one', async () => {
+    const dom = mount(WS)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .getElementById('new')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const draft = dom.window.document.querySelector('.draft')
+    ok(draft, 'the form appeared')
+    eq(draft.querySelector('.rename').value, 'Workspace 4', 'name suggested')
+    eq(draft.querySelectorAll('.swatch').length, 10, 'colours offered')
+    eq(draft.querySelectorAll('.icon-opt').length, 14, 'icons offered')
+    eq(sent.filter(m => m.method === 'create').length, 0, 'nothing created yet')
+  }),
+
+  test('the form sends the chosen name, colour and icon', async () => {
+    const dom = mount(WS)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .getElementById('new')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const draft = dom.window.document.querySelector('.draft')
+    draft.querySelector('.rename').value = 'Research'
+    draft
+      .querySelector('.swatch[data-color="cyan"]')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    ;[...draft.querySelectorAll('.icon-opt')]
+      .find(b => b.textContent === '📚')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+
+    draft
+      .querySelector('#draft-create')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const msg = sent.find(m => m.method === 'create')
+    ok(msg, 'create sent')
+    eq(msg.props.name, 'Research', 'name')
+    eq(msg.props.color, 'cyan', 'colour')
+    eq(msg.props.icon, '📚', 'icon')
+  }),
+
+  test('choosing in the form marks the selection without creating anything', async () => {
+    const dom = mount(WS)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .getElementById('new')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const draft = dom.window.document.querySelector('.draft')
+    const red = draft.querySelector('.swatch[data-color="red"]')
+    red.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+
+    eq(red.dataset.selected, 'true', 'the choice shows')
+    eq(draft.querySelector('.swatch[data-color="default"]').dataset.selected, 'false', 'and the old one clears')
+    eq(sent.filter(m => m.method === 'create' || m.method === 'update').length, 0, 'still nothing stored')
+  }),
+
+  test('Cancel leaves no trace', async () => {
+    const dom = mount(WS)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .getElementById('new')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const cancel = [...dom.window.document.querySelectorAll('.draft-actions .new')].at(-1)
+    cancel.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    ok(!dom.window.document.querySelector('.draft'), 'form closed')
+    eq(sent.filter(m => m.method === 'create').length, 0, 'nothing created')
+  }),
+
+  test('Escape in the form cancels it', async () => {
+    const dom = mount(WS)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .getElementById('new')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    dom.window.document
+      .querySelector('.draft .rename')
+      .dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+    ok(!dom.window.document.querySelector('.draft'), 'form closed')
+  }),
+
+  test('Enter in the name field creates it', async () => {
+    const dom = mount(WS)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .getElementById('new')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const input = dom.window.document.querySelector('.draft .rename')
+    input.value = 'Quick'
+    input.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    eq(sent.find(m => m.method === 'create')?.props.name, 'Quick', 'created with that name')
   }),
 
   test('the add separator button asks for one', async () => {

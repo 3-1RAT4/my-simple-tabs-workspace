@@ -274,6 +274,27 @@ const tests = [
     eq(list.map(i => i.id), [b, sepId, a], 'new arrangement stored')
   }),
 
+  test('a workspace can be created already named and styled', async () => {
+    const env = boot()
+    const wsId = await env.Workspaces.create({ name: '  Research  ', color: 'cyan', icon: '📚' })
+    const ws = await env.Store.loadWs(wsId)
+
+    eq(ws.name, 'Research', 'name trimmed and kept')
+    eq(ws.color, 'cyan', 'colour kept')
+    eq(ws.icon, '📚', 'icon kept')
+    ok(env.Workspaces.byWs.get(wsId) !== undefined, 'and its window opened')
+  }),
+
+  test('creating without details still falls back to a numbered name', async () => {
+    const env = boot()
+    await env.Workspaces.create()
+    const second = await env.Workspaces.create({ name: '   ', color: 'nonsense' })
+    const ws = await env.Store.loadWs(second)
+
+    eq(ws.name, 'Workspace 2', 'numbered')
+    eq(ws.color, 'default', 'bad colour refused')
+  }),
+
   test('workspaces survive a restart via the window session value', async () => {
     const env = boot()
     const wsId = await env.Workspaces.create()

@@ -351,13 +351,18 @@ const Workspaces = {
     }
   },
 
-  async create() {
+  // Takes an optional { name, color, icon } so a workspace can arrive already
+  // named and styled, rather than being created and then edited.
+  async create(props = {}) {
     const index = await Store.loadIndex()
+    const count = index.order.filter(id => !Store.isSeparatorId(id)).length
+
+    const name = typeof props.name === 'string' ? props.name.trim().slice(0, 60) : ''
     const ws = {
       id: Util.uuid(),
-      name: `Workspace ${index.order.filter(id => !Store.isSeparatorId(id)).length + 1}`,
-      color: Palette.DEFAULT_COLOR,
-      icon: Palette.DEFAULT_ICON,
+      name: name || `Workspace ${count + 1}`,
+      color: Palette.isColor(props.color) ? props.color : Palette.DEFAULT_COLOR,
+      icon: Palette.isIcon(props.icon) ? props.icon : Palette.DEFAULT_ICON,
       tabs: [],
       groups: [],
     }

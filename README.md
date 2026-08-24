@@ -21,7 +21,9 @@ workspace is open its tabs are simply that window's tabs.
 
 - Global workspace list, shown from any window.
 - Click a workspace to jump to its window, or reopen it if closed.
-- Create, rename, delete from the popup.
+- **New workspace** opens a form first: name, colour and icon, then the window.
+  Nothing is stored until you confirm, so cancelling leaves no trace.
+- Rename and delete from the popup.
 - **Give each workspace a colour and an icon** (✎ on a row) so the list is
   readable at a glance. Colours match Firefox's own tab group colours.
 - **Drag a row to reorder the list.**

@@ -24,8 +24,16 @@ browser.runtime.onMessage.addListener(async msg => {
       return null
 
     case 'create':
-      await Util.serial(() => Workspaces.create())
+      await Util.serial(() => Workspaces.create(msg.props ?? {}))
       return null
+
+    case 'nextName':
+      // What the draft form should offer as a starting name.
+      return {
+        name: `Workspace ${
+          (await Store.loadIndex()).order.filter(id => !Store.isSeparatorId(id)).length + 1
+        }`,
+      }
 
     case 'update':
       await Util.serial(() => Workspaces.update(msg.workspaceId, msg.props))

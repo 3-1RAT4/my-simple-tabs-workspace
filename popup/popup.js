@@ -505,9 +505,125 @@ listEl.addEventListener('dragend', async () => {
 
 // ---- footer -----------------------------------------------------------------
 
-document.getElementById('new').addEventListener('click', async () => {
-  await send('create')
-  window.close()
+// Creating a workspace opens a form first rather than a window: naming and
+// styling it afterwards means finding the row again in a list that just grew.
+// Nothing is stored until Create, so Cancel leaves no trace.
+async function openDraft() {
+  if (document.querySelector('.draft')) return closeDraft()
+
+  document.querySelectorAll('.editor').forEach(el => el.remove())
+  document.querySelectorAll('[data-editing]').forEach(el => delete el.dataset.editing)
+
+  let color = Palette.DEFAULT_COLOR
+  let icon = Palette.DEFAULT_ICON
+
+  const panel = document.createElement('li')
+  panel.className = 'editor draft'
+
+  const heading = document.createElement('p')
+  heading.className = 'draft-heading'
+  heading.textContent = 'New workspace'
+
+  const input = document.createElement('input')
+  input.className = 'rename'
+  input.type = 'text'
+  input.maxLength = 60
+  input.placeholder = 'Name'
+  input.setAttribute('aria-label', 'Workspace name')
+  try {
+    input.value = (await send('nextName')).name
+  } catch {
+    input.value = ''
+  }
+
+  const colors = document.createElement('div')
+  colors.className = 'swatches'
+  const swatches = Palette.colors.map(value => {
+    const swatch = document.createElement('button')
+    swatch.className = 'swatch'
+    swatch.dataset.color = value
+    swatch.dataset.selected = String(value === color)
+    swatch.title = value
+    swatch.setAttribute('aria-label', `Colour ${value}`)
+    swatch.addEventListener('click', event => {
+      event.stopPropagation()
+      color = value
+      swatches.forEach(el => (el.dataset.selected = String(el.dataset.color === color)))
+    })
+    colors.append(swatch)
+    return swatch
+  })
+
+  const icons = document.createElement('div')
+  icons.className = 'icons'
+  const iconButtons = Palette.icons.map(value => {
+    const button = document.createElement('button')
+    button.className = 'icon-opt'
+    button.dataset.icon = value
+    button.dataset.selected = String(value === icon)
+    button.textContent = value || '∅'
+    button.title = value ? `Use ${value}` : 'No icon'
+    button.setAttribute('aria-label', value ? `Icon ${value}` : 'No icon')
+    button.addEventListener('click', event => {
+      event.stopPropagation()
+      icon = value
+      iconButtons.forEach(el => (el.dataset.selected = String(el.dataset.icon === icon)))
+    })
+    icons.append(button)
+    return button
+  })
+
+  const actions = document.createElement('div')
+  actions.className = 'draft-actions'
+
+  const create = document.createElement('button')
+  create.className = 'new'
+  create.id = 'draft-create'
+  create.textContent = 'Create and open window'
+
+  const cancel = document.createElement('button')
+  cancel.className = 'new secondary'
+  cancel.textContent = 'Cancel'
+
+  actions.append(create, cancel)
+  panel.append(heading, input, colors, icons, actions)
+  listEl.append(panel)
+  panel.scrollIntoView({ block: 'nearest' })
+  input.focus()
+  input.select()
+
+  const submit = async () => {
+    await send('create', { props: { name: input.value, color, icon } })
+    window.close()
+  }
+
+  create.addEventListener('click', event => {
+    event.stopPropagation()
+    submit()
+  })
+  cancel.addEventListener('click', event => {
+    event.stopPropagation()
+    closeDraft()
+  })
+  panel.addEventListener('click', event => event.stopPropagation())
+  input.addEventListener('keydown', event => {
+    event.stopPropagation()
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      submit()
+    } else if (event.key === 'Escape') {
+      event.preventDefault()
+      closeDraft()
+    }
+  })
+}
+
+function closeDraft() {
+  document.querySelector('.draft')?.remove()
+}
+
+document.getElementById('new').addEventListener('click', () => {
+  openDraft().catch(() => {})
 })
 
 document.getElementById('add-sep').addEventListener('click', async () => {

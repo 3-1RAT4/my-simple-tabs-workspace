@@ -523,6 +523,24 @@ body {
   outline-offset: 1px;
 }
 
+.draft {
+  border: 1px solid var(--accent);
+}
+
+.draft-heading {
+  margin: 0 0 8px;
+  color: var(--fg-dim);
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.draft-actions {
+  display: flex;
+  gap: var(--gap);
+  margin-top: 10px;
+}
+
 .secondary {
   flex: 0 0 auto;
   color: var(--fg-dim);
