@@ -220,6 +220,22 @@ const tests = [
     eq(granted, true, 'and the permission was asked for and kept')
   }),
 
+  test('every alignment has a rule that lays the row out differently', async () => {
+    // jsdom computes no layout, so this checks the stylesheet says something
+    // distinct for each alignment rather than that it looks right.
+    const css = readFileSync(`${ROOT}popup/popup.css`, 'utf8')
+    const columns = ['left', 'center', 'right'].map(align => {
+      const match = css.match(
+        new RegExp(`\\.sep\\[data-align='${align}'\\]\\s*\\{[^}]*grid-template-columns:([^;]+);`)
+      )
+      ok(match, `${align} has a grid-template-columns rule`)
+      return match[1].trim()
+    })
+
+    eq(new Set(columns).size, 3, 'all three lay out differently')
+    ok(columns[1].startsWith('1fr') && columns[1].includes('1fr auto'), 'centre grows both rules')
+  }),
+
   test('the configuration link opens the options page', async () => {
     const env = await boot()
     let opened = false
