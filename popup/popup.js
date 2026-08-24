@@ -83,32 +83,54 @@ function render() {
   listEl.children[focusIndex]?.scrollIntoView({ block: 'nearest' })
 }
 
-// A rule with an optional label. Unlabelled it is just a line, which is all a
-// separator needs to be.
+// A rule with an optional label, which can sit left, centre or right and take
+// a colour. Two line segments flex around the label; alignment decides which
+// of them grows.
 function renderSeparator(item) {
   const row = document.createElement('li')
   row.className = 'sep'
   row.draggable = true
   row.dataset.id = item.id
+  row.dataset.align = item.align || 'left'
+  row.dataset.color = item.color || 'default'
   row.setAttribute('role', 'separator')
+  if (item.label) row.setAttribute('aria-label', item.label)
+
+  const lineBefore = document.createElement('span')
+  lineBefore.className = 'sep-line'
 
   const label = document.createElement('span')
   label.className = 'sep-label'
   label.textContent = item.label
-  label.title = 'Click to label this separator'
+  label.title = 'Click to edit this separator'
+
+  const lineAfter = document.createElement('span')
+  lineAfter.className = 'sep-line'
+
+  const actions = document.createElement('span')
+  actions.className = 'actions sep-actions'
+
+  const edit = document.createElement('button')
+  edit.className = 'act edit'
+  edit.textContent = '\u270e'
+  edit.title = 'Label, alignment and colour'
+  edit.setAttribute('aria-label', 'Edit separator')
 
   const del = document.createElement('button')
-  del.className = 'act del sep-del'
-  del.textContent = '×'
+  del.className = 'act del'
+  del.textContent = '\u00d7'
   del.title = 'Remove separator'
   del.setAttribute('aria-label', 'Remove separator')
 
-  row.append(label, del)
+  actions.append(edit, del)
+  row.append(lineBefore, label, lineAfter, actions)
 
-  label.addEventListener('click', event => {
+  const open = event => {
     event.stopPropagation()
-    editSeparator(row, label, item)
-  })
+    toggleSeparatorEditor(row, item)
+  }
+  label.addEventListener('click', open)
+  edit.addEventListener('click', open)
 
   del.addEventListener('click', async event => {
     event.stopPropagation()
@@ -118,32 +140,83 @@ function renderSeparator(item) {
   return row
 }
 
-function editSeparator(row, labelEl, item) {
-  if (row.dataset.editing) return
+function toggleSeparatorEditor(row, item) {
+  const existing = row.nextElementSibling
+  if (existing?.classList.contains('editor')) {
+    existing.remove()
+    delete row.dataset.editing
+    return
+  }
+
+  document.querySelectorAll('.editor').forEach(el => el.remove())
+  document.querySelectorAll('[data-editing]').forEach(el => delete el.dataset.editing)
   row.dataset.editing = 'true'
 
+  const panel = document.createElement('li')
+  panel.className = 'editor'
+
   const input = document.createElement('input')
-  input.className = 'sep-input'
+  input.className = 'rename'
   input.type = 'text'
   input.value = item.label
   input.maxLength = 40
-  input.placeholder = 'Label, or leave empty'
+  input.placeholder = 'Label, or leave empty for a plain rule'
   input.setAttribute('aria-label', 'Separator label')
-  labelEl.replaceWith(input)
+
+  const patch = async props => apply(await send('updateSeparator', { separatorId: item.id, props }))
+
+  const aligns = document.createElement('div')
+  aligns.className = 'aligns'
+  for (const align of Palette.aligns) {
+    const button = document.createElement('button')
+    button.className = 'align-opt'
+    button.dataset.align = align
+    button.dataset.selected = String((item.align || 'left') === align)
+    button.textContent = { left: '\u2261', center: '\u2261', right: '\u2261' }[align]
+    button.title = `Align ${align}`
+    button.setAttribute('aria-label', `Align ${align}`)
+    aligns.append(button)
+
+    button.addEventListener('click', event => {
+      event.stopPropagation()
+      patch({ align })
+    })
+  }
+
+  const colors = document.createElement('div')
+  colors.className = 'swatches'
+  for (const color of Palette.colors) {
+    const swatch = document.createElement('button')
+    swatch.className = 'swatch'
+    swatch.dataset.color = color
+    swatch.dataset.selected = String((item.color || 'default') === color)
+    swatch.title = color
+    swatch.setAttribute('aria-label', `Colour ${color}`)
+    colors.append(swatch)
+
+    swatch.addEventListener('click', event => {
+      event.stopPropagation()
+      patch({ color })
+    })
+  }
+
+  panel.append(input, aligns, colors)
+  row.after(panel)
   input.focus()
   input.select()
 
   let done = false
-  const finish = async commit => {
+  const finish = commit => {
     if (done) return
     done = true
     delete row.dataset.editing
-    if (!commit) return apply()
-    apply(await send('updateSeparator', { separatorId: item.id, label: input.value }))
+    if (commit) patch({ label: input.value })
+    else apply()
   }
 
   input.addEventListener('blur', () => finish(true), { once: true })
   input.addEventListener('click', event => event.stopPropagation())
+  panel.addEventListener('click', event => event.stopPropagation())
   input.addEventListener('keydown', event => {
     event.stopPropagation()
     if (event.key === 'Enter') {
@@ -396,7 +469,8 @@ filterEl.addEventListener('input', () => apply())
 // ---- drag to reorder --------------------------------------------------------
 
 listEl.addEventListener('dragstart', event => {
-  const row = event.target.closest('.row')
+  // Separators are draggable as well, so the selector cannot be .row alone.
+  const row = event.target.closest('.row, .sep')
   if (!row) return
   dragging = row
   row.dataset.dragging = 'true'
@@ -409,7 +483,7 @@ listEl.addEventListener('dragover', event => {
   event.preventDefault()
   event.dataTransfer.dropEffect = 'move'
 
-  const over = event.target.closest('.row')
+  const over = event.target.closest('.row, .sep')
   if (!over || over === dragging) return
 
   const box = over.getBoundingClientRect()
@@ -437,7 +511,7 @@ document.getElementById('new').addEventListener('click', async () => {
 })
 
 document.getElementById('add-sep').addEventListener('click', async () => {
-  apply(await send('addSeparator'))
+  apply(await send('addSeparator', { props: {} }))
 })
 
 document.getElementById('backup').addEventListener('click', event => {

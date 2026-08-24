@@ -107,7 +107,14 @@ const Workspaces = {
     const out = []
     for (const id of index.order) {
       if (Store.isSeparatorId(id)) {
-        out.push({ type: 'separator', id, label: index.separators[id]?.label || '' })
+        const sep = index.separators[id] || {}
+        out.push({
+          type: 'separator',
+          id,
+          label: sep.label || '',
+          align: sep.align || Palette.DEFAULT_ALIGN,
+          color: sep.color || Palette.DEFAULT_COLOR,
+        })
         continue
       }
 
@@ -143,20 +150,39 @@ const Workspaces = {
 
   // ---- separators ----------------------------------------------------------
 
-  async addSeparator(label = '') {
+  // Takes { label, align, color }, or a bare label string.
+  async addSeparator(props = {}) {
+    const patch = typeof props === 'string' ? { label: props } : props
     const index = await Store.loadIndex()
     const id = `sep-${Util.uuid()}`
     index.order.push(id)
-    index.separators[id] = { label: String(label).trim().slice(0, 40) }
+    index.separators[id] = Workspaces._cleanSeparator({}, patch)
     await Store.saveIndex(index)
     return id
   },
 
-  async updateSeparator(sepId, label) {
+  // Accepts any subset of { label, align, color } and leaves the rest alone.
+  async updateSeparator(sepId, props = {}) {
     const index = await Store.loadIndex()
-    if (!index.separators[sepId]) return
-    index.separators[sepId] = { label: String(label ?? '').trim().slice(0, 40) }
+    const current = index.separators[sepId]
+    if (!current) return
+
+    // A bare string keeps the older call style working.
+    const patch = typeof props === 'string' ? { label: props } : props
+    index.separators[sepId] = Workspaces._cleanSeparator(current, patch)
     await Store.saveIndex(index)
+  },
+
+  _cleanSeparator(current, patch) {
+    const out = {
+      label: current.label || '',
+      align: current.align || Palette.DEFAULT_ALIGN,
+      color: current.color || Palette.DEFAULT_COLOR,
+    }
+    if (patch.label !== undefined) out.label = String(patch.label ?? '').trim().slice(0, 40)
+    if (Palette.isAlign(patch.align)) out.align = patch.align
+    if (Palette.isColor(patch.color)) out.color = patch.color
+    return out
   },
 
   async removeSeparator(sepId) {

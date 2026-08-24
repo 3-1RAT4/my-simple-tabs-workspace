@@ -191,7 +191,9 @@ body {
 
 .row:hover .actions,
 .row[data-focused='true'] .actions,
-.row:focus-within .actions {
+.row:focus-within .actions,
+.sep:hover .actions,
+.sep:focus-within .actions {
   opacity: 1;
 }
 
@@ -398,23 +400,44 @@ body {
 }
 
 /* ---- separators ----
-   Structure, not content: a rule the eye skips over, with an optional label
-   for when a group of workspaces deserves a name. */
+   Structure, not content. Two line segments flex around the label; which one
+   grows is what alignment means here. */
 
 .sep {
+  --sep-tint: var(--border);
   list-style: none;
   display: flex;
   align-items: center;
   gap: var(--gap);
   padding: calc(var(--gap) * 1.2) calc(var(--gap) * 2);
-  cursor: default;
+  cursor: grab;
 }
 
-.sep::after {
-  content: '';
-  flex: 1;
+.sep[data-color='blue'] { --sep-tint: var(--c-blue); }
+.sep[data-color='purple'] { --sep-tint: var(--c-purple); }
+.sep[data-color='cyan'] { --sep-tint: var(--c-cyan); }
+.sep[data-color='green'] { --sep-tint: var(--c-green); }
+.sep[data-color='yellow'] { --sep-tint: var(--c-yellow); }
+.sep[data-color='orange'] { --sep-tint: var(--c-orange); }
+.sep[data-color='red'] { --sep-tint: var(--c-red); }
+.sep[data-color='pink'] { --sep-tint: var(--c-pink); }
+.sep[data-color='grey'] { --sep-tint: var(--c-grey); }
+
+.sep-line {
   height: 1px;
-  background: var(--border);
+  background: var(--sep-tint);
+  flex: 0 0 0;
+}
+
+.sep[data-align='left'] .sep-line:nth-of-type(2),
+.sep[data-align='center'] .sep-line,
+.sep[data-align='right'] .sep-line:first-of-type {
+  flex: 1 1 auto;
+}
+
+/* A rule with no label needs no gap around a label that is not there. */
+.sep-label:empty {
+  margin: 0;
 }
 
 .sep-label {
@@ -427,6 +450,10 @@ body {
   padding: 2px 0;
 }
 
+.sep:not([data-color='default']) .sep-label {
+  color: var(--sep-tint);
+}
+
 .sep-label:empty::before {
   content: 'label';
   opacity: 0;
@@ -436,27 +463,49 @@ body {
   opacity: 0.6;
 }
 
-.sep-input {
+.sep-actions {
   flex-shrink: 0;
-  width: 45%;
-  padding: 2px calc(var(--gap) * 0.8);
-  font: inherit;
-  font-size: 0.82em;
-  color: var(--fg);
+}
+
+/* ---- alignment picker ---- */
+
+.aligns {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.align-opt {
+  width: calc(var(--font) * 1.5);
+  height: calc(var(--font) * 1.5);
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
   background: var(--bg);
-  border: 1px solid var(--accent);
-  border-radius: 3px;
+  color: var(--fg-dim);
+  font-size: calc(var(--font) * 0.85);
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
-.sep-del {
-  opacity: 0;
-  flex-shrink: 0;
-  order: 3;
+.align-opt[data-align='left'] { justify-content: flex-start; padding-left: 3px; }
+.align-opt[data-align='center'] { justify-content: center; }
+.align-opt[data-align='right'] { justify-content: flex-end; padding-right: 3px; }
+
+.align-opt:hover {
+  background: var(--raised);
 }
 
-.sep:hover .sep-del,
-.sep:focus-within .sep-del {
-  opacity: 1;
+.align-opt[data-selected='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.align-opt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .secondary {

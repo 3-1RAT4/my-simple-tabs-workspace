@@ -18,6 +18,13 @@ globalThis.Palette = {
 
   icons: ['', '💼', '🏠', '🎓', '🛒', '🎵', '🎮', '📚', '🔧', '💡', '🧪', '✈️', '❤️', '🌐'],
 
+  DEFAULT_ALIGN: 'left',
+  aligns: ['left', 'center', 'right'],
+
+  isAlign(value) {
+    return Palette.aligns.includes(value)
+  },
+
   isColor(value) {
     return Palette.colors.includes(value)
   },

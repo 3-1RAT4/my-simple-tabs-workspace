@@ -80,6 +80,8 @@ const Backup = {
       separators: Object.entries(index.separators).map(([id, sep]) => ({
         id,
         label: sep.label || '',
+        align: sep.align || Palette.DEFAULT_ALIGN,
+        color: sep.color || Palette.DEFAULT_COLOR,
       })),
     }
   },
@@ -182,6 +184,8 @@ const Backup = {
         taken.add(id)
         index.separators[id] = {
           label: typeof sep.label === 'string' ? sep.label.trim().slice(0, 40) : '',
+          align: Palette.isAlign(sep.align) ? sep.align : Palette.DEFAULT_ALIGN,
+          color: Palette.isColor(sep.color) ? sep.color : Palette.DEFAULT_COLOR,
         }
       }
     }

@@ -48,11 +48,13 @@ browser.runtime.onMessage.addListener(async msg => {
       return await Util.serial(() => Workspaces.list(windowId))
 
     case 'addSeparator':
-      await Util.serial(() => Workspaces.addSeparator(msg.label))
+      await Util.serial(() => Workspaces.addSeparator(msg.props ?? {}))
       return await Util.serial(() => Workspaces.list(windowId))
 
     case 'updateSeparator':
-      await Util.serial(() => Workspaces.updateSeparator(msg.separatorId, msg.label))
+      await Util.serial(() =>
+        Workspaces.updateSeparator(msg.separatorId, msg.props ?? { label: msg.label })
+      )
       return await Util.serial(() => Workspaces.list(windowId))
 
     case 'deleteSeparator':

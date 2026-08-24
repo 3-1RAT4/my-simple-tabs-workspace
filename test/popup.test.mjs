@@ -335,16 +335,18 @@ const tests = [
     eq(sent.find(m => m.method === 'activate')?.workspaceId, 'b', 'second workspace, not the separator')
   }),
 
-  test('clicking a separator label opens an input', async () => {
+  test('clicking a separator opens its editor', async () => {
     const dom = mount(WITH_SEP)
     await new Promise(r => setTimeout(r, 60))
     dom.window.document
       .querySelector('.sep-label')
       .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
 
-    const input = dom.window.document.querySelector('.sep-input')
-    ok(input, 'input appeared')
-    eq(input.value, 'Personal', 'prefilled')
+    const panel = dom.window.document.querySelector('.editor')
+    ok(panel, 'editor appeared')
+    eq(panel.querySelector('.rename').value, 'Personal', 'label prefilled')
+    eq(panel.querySelectorAll('.align-opt').length, 3, 'three alignments offered')
+    eq(panel.querySelectorAll('.swatch').length, 10, 'every colour offered')
   }),
 
   test('Enter saves a separator label', async () => {
@@ -354,22 +356,81 @@ const tests = [
       .querySelector('.sep-label')
       .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
 
-    const input = dom.window.document.querySelector('.sep-input')
+    const input = dom.window.document.querySelector('.editor .rename')
     input.value = 'Leisure'
     input.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     await new Promise(r => setTimeout(r, 60))
 
     const msg = sent.find(m => m.method === 'updateSeparator')
     ok(msg, 'update sent')
-    eq(msg.label, 'Leisure', 'the typed label')
+    eq(msg.props.label, 'Leisure', 'the typed label')
     eq(msg.separatorId, 'sep-1', 'for the right separator')
+  }),
+
+  test('alignment and colour are applied to the separator row', async () => {
+    const dom = mount([
+      ws('a', 'Work', { current: true }),
+      { type: 'separator', id: 'sep-1', label: 'Middle', align: 'center', color: 'purple' },
+    ])
+    await new Promise(r => setTimeout(r, 60))
+    const sep = dom.window.document.querySelector('.sep')
+    eq(sep.dataset.align, 'center', 'alignment on the row')
+    eq(sep.dataset.color, 'purple', 'colour on the row')
+    eq(sep.querySelectorAll('.sep-line').length, 2, 'a line either side of the label')
+  }),
+
+  test('choosing an alignment sends it', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .querySelector('.sep-label')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    dom.window.document
+      .querySelector('.align-opt[data-align="center"]')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const msg = sent.find(m => m.method === 'updateSeparator' && m.props.align)
+    ok(msg, 'update sent')
+    eq(msg.props.align, 'center', 'the chosen alignment')
+  }),
+
+  test('choosing a separator colour sends it', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .querySelector('.sep-label')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    dom.window.document
+      .querySelector('.editor .swatch[data-color="orange"]')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const msg = sent.find(m => m.method === 'updateSeparator' && m.props.color)
+    ok(msg, 'update sent')
+    eq(msg.props.color, 'orange', 'the chosen colour')
+  }),
+
+  test('a separator is draggable, which the drag handlers must accept', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    const sep = dom.window.document.querySelector('.sep')
+    eq(sep.draggable, true, 'marked draggable')
+
+    // The bug this covers: the handlers matched .row only, so dragstart on a
+    // separator never took hold and it could not be moved.
+    const transfer = { effectAllowed: '', setData() {}, dropEffect: '' }
+    const event = new dom.window.MouseEvent('dragstart', { bubbles: true })
+    Object.defineProperty(event, 'dataTransfer', { value: transfer })
+    sep.dispatchEvent(event)
+    eq(sep.dataset.dragging, 'true', 'the drag was picked up')
   }),
 
   test('removing a separator asks the background to drop it', async () => {
     const dom = mount(WITH_SEP)
     await new Promise(r => setTimeout(r, 60))
     dom.window.document
-      .querySelector('.sep-del')
+      .querySelector('.sep .del')
       .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
     await new Promise(r => setTimeout(r, 60))
     eq(sent.find(m => m.method === 'deleteSeparator')?.separatorId, 'sep-1', 'by id')
