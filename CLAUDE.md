@@ -84,6 +84,12 @@ devtools — it has already failed for them once.
   losing container tabs.
 - `tabs.create` refuses `about:`, `chrome:` and `moz-extension:` urls.
 - Extension buttons are hidden in the Extensions panel until pinned to the toolbar.
+- A control next to a focused text field steals focus on mousedown. If that
+  field commits on blur and the commit re-renders, the control is removed from
+  the document before mouseup and **its click never fires**. Prevent the default
+  on mousedown for anything in a panel that should not take focus. jsdom does
+  not move focus on mousedown, so a synthetic click passes where a real one
+  does not - this cost several rounds of chasing the wrong layer.
 
 ## Layout
 

@@ -236,6 +236,15 @@ function buildSeparatorEditor(row, item) {
 
   panel.append(heading, input, aligns, colors)
   row.after(panel)
+
+  // Controls in a panel must not take focus from the text field. Focus leaving
+  // the field fires its blur handler, which commits and re-renders, and the
+  // button is removed from the document between mousedown and mouseup - so its
+  // click never fires. Preventing the default on mousedown keeps focus put.
+  panel.addEventListener('mousedown', event => {
+    if (event.target !== input) event.preventDefault()
+  })
+
   input.focus()
   input.select()
 
@@ -436,6 +445,15 @@ function buildWorkspaceEditor(row, ws) {
 
   panel.append(input, colors, icons)
   row.after(panel)
+
+  // Controls in a panel must not take focus from the text field. Focus leaving
+  // the field fires its blur handler, which commits and re-renders, and the
+  // button is removed from the document between mousedown and mouseup - so its
+  // click never fires. Preventing the default on mousedown keeps focus put.
+  panel.addEventListener('mousedown', event => {
+    if (event.target !== input) event.preventDefault()
+  })
+
   input.focus()
   input.select()
 
@@ -629,6 +647,15 @@ async function openDraft() {
   panel.append(heading, input, colors, icons, actions)
   listEl.append(panel)
   panel.scrollIntoView({ block: 'nearest' })
+
+  // Controls in a panel must not take focus from the text field. Focus leaving
+  // the field fires its blur handler, which commits and re-renders, and the
+  // button is removed from the document between mousedown and mouseup - so its
+  // click never fires. Preventing the default on mousedown keeps focus put.
+  panel.addEventListener('mousedown', event => {
+    if (event.target !== input) event.preventDefault()
+  })
+
   input.focus()
   input.select()
 

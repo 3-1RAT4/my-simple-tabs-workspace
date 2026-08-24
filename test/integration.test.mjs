@@ -267,6 +267,60 @@ const tests = [
     ok(!env.doc.querySelector('.editor'), 'closed and stayed closed')
   }),
 
+  test('editor controls do not steal focus from the label field', async () => {
+    const env = await boot()
+    click(env.dom, env.doc.getElementById('add-sep'))
+    await new Promise(r => setTimeout(r, 80))
+    click(env.dom, env.doc.querySelector('.sep-label'))
+
+    // The bug this covers: the field is focused, so pressing a button in the
+    // panel blurred it, the blur committed and re-rendered, and the button was
+    // gone before mouseup - its click never fired. jsdom does not move focus on
+    // mousedown, so only the prevented default can be observed here.
+    for (const selector of ['.align-opt[data-align="center"]', '.editor .swatch[data-color="red"]']) {
+      const event = new env.dom.window.MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      env.doc.querySelector(selector).dispatchEvent(event)
+      eq(event.defaultPrevented, true, `${selector} keeps focus in the field`)
+    }
+
+    // The field itself must stay clickable.
+    const onField = new env.dom.window.MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    env.doc.querySelector('.editor .rename').dispatchEvent(onField)
+    eq(onField.defaultPrevented, false, 'the text field still takes focus')
+  }),
+
+  test('an alignment still applies after the field has been blurred', async () => {
+    const env = await boot()
+    click(env.dom, env.doc.getElementById('add-sep'))
+    await new Promise(r => setTimeout(r, 80))
+    click(env.dom, env.doc.querySelector('.sep-label'))
+
+    // Worst case: the blur commit runs first anyway.
+    env.doc
+      .querySelector('.editor .rename')
+      .dispatchEvent(new env.dom.window.FocusEvent('blur', { bubbles: false }))
+    await new Promise(r => setTimeout(r, 80))
+
+    // The commit re-renders, and the editor comes back with it, so the buttons
+    // are still there to be clicked.
+    ok(env.doc.querySelector('.editor'), 'the editor survived the commit')
+    click(env.dom, env.doc.querySelector('.align-opt[data-align="center"]'))
+    await new Promise(r => setTimeout(r, 80))
+
+    const stored = Object.values((await env.Store.loadIndex()).separators)[0]
+    eq(stored.align, 'center', 'the alignment was stored')
+  }),
+
+  test('the workspace editor keeps focus too', async () => {
+    const env = await boot()
+    click(env.dom, env.doc.querySelector('.row .act.edit'))
+    await new Promise(r => setTimeout(r, 60))
+
+    const event = new env.dom.window.MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    env.doc.querySelector('.editor .swatch[data-color="green"]').dispatchEvent(event)
+    eq(event.defaultPrevented, true, 'colour swatches keep focus in the field')
+  }),
+
   test('every alignment has a rule that lays the row out differently', async () => {
     // jsdom computes no layout, so this checks the stylesheet says something
     // distinct for each alignment rather than that it looks right.
