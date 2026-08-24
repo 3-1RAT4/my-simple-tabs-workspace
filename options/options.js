@@ -33,15 +33,26 @@ function showContainerPrompt(result) {
   box.hidden = false
 }
 
-document.getElementById('import-containers-fix').addEventListener('click', async () => {
-  const granted = await browser.permissions.request(COOKIES)
-  if (!granted) return
-  document.getElementById('import-containers').hidden = true
-  await renderPermission()
-  say('Containers will be restored.')
+document.getElementById('import-containers-fix').addEventListener('click', () => {
+  // request() first, before any await, so the click still counts as a gesture.
+  browser.permissions
+    .request(COOKIES)
+    .then(async granted => {
+      if (!granted) return
+      document.getElementById('import-containers').hidden = true
+      await renderPermission()
+      say('Containers will be restored.')
+    })
+    .catch(err => say(String(err?.message ?? err), 'error'))
 })
 
 const COOKIES = { permissions: ['cookies'] }
+
+// permissions.request() has to be reached before the click handler awaits
+// anything: the first await ends the user gesture, and Firefox then refuses
+// with "may only be called from a user input handler". So the granted state is
+// kept here, written by renderPermission, rather than looked up on click.
+let cookiesGranted = false
 
 async function renderPermission() {
   const { granted, storedContainerTabs } = await browser.runtime.sendMessage({
@@ -59,6 +70,7 @@ async function renderPermission() {
           storedContainerTabs === 1 ? 's' : ''
         } a container.`
 
+  cookiesGranted = granted
   state.hidden = false
   state.textContent = granted
     ? `Granted. Rebuilt tabs return to their containers. ${affected}`
@@ -67,13 +79,15 @@ async function renderPermission() {
   button.textContent = granted ? 'Withdraw permission' : 'Allow container tabs'
 }
 
-document.getElementById('perm-toggle').addEventListener('click', async () => {
-  // request() and remove() both need a user gesture, which is why this lives on
-  // a button rather than being asked for when a restore happens to need it.
-  const granted = await browser.permissions.contains(COOKIES)
-  if (granted) await browser.permissions.remove(COOKIES)
-  else await browser.permissions.request(COOKIES)
-  await renderPermission()
+document.getElementById('perm-toggle').addEventListener('click', () => {
+  // Called without awaiting first, for the reason above.
+  const asked = cookiesGranted
+    ? browser.permissions.remove(COOKIES)
+    : browser.permissions.request(COOKIES)
+
+  asked
+    .then(() => renderPermission())
+    .catch(err => say(String(err?.message ?? err), 'error'))
 })
 
 // ---- settings ---------------------------------------------------------------

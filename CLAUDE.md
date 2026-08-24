@@ -71,6 +71,11 @@ devtools — it has already failed for them once.
 
 ## Known Firefox behaviours worth remembering
 
+- `permissions.request()` must be **reached before the click handler awaits
+  anything**. The first await ends the user gesture and Firefox refuses with
+  "may only be called from a user input handler". Keep any state the handler
+  needs in a variable rather than looking it up on click.
+
 - A tab group whose window closes becomes a **saved group**. Extensions cannot list or delete
   saved groups (`tabGroups` has no `remove()`), and a saved group's id cannot be regrouped —
   MDN: "when a tab group is restored, its groupId may differ from its original value". The

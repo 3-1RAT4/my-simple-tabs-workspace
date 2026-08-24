@@ -704,11 +704,17 @@ async function showNotices() {
 
 // Wired once at load rather than when a notice appears, so the buttons are
 // never on screen without a handler behind them.
-document.getElementById('notice-fix').addEventListener('click', async () => {
-  const granted = await browser.permissions.request({ permissions: ['cookies'] })
-  if (!granted) return
-  await send('dismissNotice')
-  document.getElementById('notice').hidden = true
+document.getElementById('notice-fix').addEventListener('click', () => {
+  // request() must be reached before this handler awaits anything, or the user
+  // gesture is over and Firefox refuses the call.
+  browser.permissions
+    .request({ permissions: ['cookies'] })
+    .then(async granted => {
+      if (!granted) return
+      await send('dismissNotice')
+      document.getElementById('notice').hidden = true
+    })
+    .catch(showError)
 })
 
 document.getElementById('notice-dismiss').addEventListener('click', async () => {
