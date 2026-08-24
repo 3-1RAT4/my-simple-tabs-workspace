@@ -77,6 +77,14 @@ export function createFakeBrowser(options = {}) {
         permissions,
       }),
       onMessage: listener(),
+
+      // Delivers to whatever the background registered, so a test can drive the
+      // popup and the background together instead of stubbing one of them.
+      async sendMessage(msg) {
+        const handlers = browser.runtime.onMessage._handlers()
+        if (!handlers.length) throw new Error('No message handler registered')
+        return await handlers[0](msg)
+      },
       onStartup: listener(),
       onInstalled: listener(),
       openOptionsPage: async () => {},
@@ -435,6 +443,7 @@ function listener() {
     removeListener: fn => fns.splice(fns.indexOf(fn), 1),
     hasListener: fn => fns.includes(fn),
     emit: (...args) => fns.forEach(fn => fn(...args)),
+    _handlers: () => fns,
   }
 }
 

@@ -16,6 +16,7 @@ browser.
 | L0 | Syntax, manifest, `web-ext lint` | `npm run lint` |
 | L1 | Mock WebExtension API scenarios | `npm test` |
 | L2 | Popup executed in jsdom | `npm test` |
+| L2+ | Popup and background driven against each other | `npm test` |
 | L3 | Real browser, auto-reload | `./tools/dev-firefox.sh` |
 
 Never spend a round-trip on something a lower layer can catch.
@@ -37,22 +38,28 @@ Three dead ends were environmental, not code:
 Three separate breakages came from test files keeping their own copy of that list
 and drifting when a script was added.
 
-**4. The mock must model how the browser says *no*.** Its value is in the failure modes.
+**4. Test the two halves against each other, not only apart.**
+`test/integration.test.mjs` runs the real popup against the real background with
+nothing stubbed between them, because both sides can pass their own tests while
+the message they exchange does not line up. A popup test that asserts a message
+was *sent* proves nothing about what the background does with it.
+
+**5. The mock must model how the browser says *no*.** Its value is in the failure modes.
 When the browser surprises us, encode the surprise in `lib/fake-browser.mjs` with a comment
 saying where the rule came from. A mock that only does the happy path will happily confirm a
 wrong assumption — this already happened once, when the mock let a saved tab group be revived
 by id and "proved" a fix that did not work in Firefox.
 
-**5. Check the API docs before assuming.** Two wrong guesses were settled in one WebFetch of
+**6. Check the API docs before assuming.** Two wrong guesses were settled in one WebFetch of
 MDN. Cheaper than a round-trip.
 
-**6. Mark unverifiable assumptions.** Anything that cannot be tested locally gets
+**7. Mark unverifiable assumptions.** Anything that cannot be tested locally gets
 `ASSUMPTION:` in the code, naming what would falsify it.
 
-**7. Bump the version on every build** (`./build.sh --bump`), and show it in the popup, so
+**8. Bump the version on every build** (`./build.sh --bump`), and show it in the popup, so
 "which build are you running" is never a question.
 
-**8. Say what is verified.** Distinguish "verified by test" from "reasoned about" in reports
+**9. Say what is verified.** Distinguish "verified by test" from "reasoned about" in reports
 to the user. They act on the difference.
 
 ## Getting evidence out of the browser
