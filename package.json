@@ -14,5 +14,6 @@
   "devDependencies": {
     "jsdom": "^26.0.0",
     "web-ext": "^8.3.0"
-  }
+  },
+  "license": "MIT"
 }
