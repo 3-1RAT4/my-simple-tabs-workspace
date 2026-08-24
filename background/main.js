@@ -95,7 +95,7 @@ browser.runtime.onMessage.addListener(async msg => {
       }
 
     case 'diagnostics':
-      return await Diagnostics.dump()
+      return await Diagnostics.dump({ full: !!msg.full })
 
     default:
       throw new Error(`Unknown method: ${msg.method}`)

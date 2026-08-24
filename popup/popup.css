@@ -371,6 +371,21 @@ body {
   flex-shrink: 0;
 }
 
+.diagnote {
+  margin: 0;
+  padding: 0 calc(var(--gap) * 2.5) calc(var(--gap) * 1.2);
+  color: var(--fg-dim);
+  font-size: 0.78em;
+  line-height: 1.4;
+}
+
+.diagnote label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
 .diagout {
   width: calc(100% - 12px);
   height: 90px;

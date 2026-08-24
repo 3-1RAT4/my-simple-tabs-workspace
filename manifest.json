@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "My Simple Tabs Workspace",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "One workspace per window. A global list of workspaces, each opening in its own window.",
   "browser_specific_settings": {
     "gecko": {
@@ -20,16 +20,23 @@
   },
   "permissions": [
     "tabs",
-    "cookies",
     "tabGroups",
     "sessions",
     "storage",
     "menus"
   ],
+  "optional_permissions": [
+    "cookies"
+  ],
+  "content_security_policy": "script-src 'self'; object-src 'self'",
   "browser_action": {
     "default_icon": "icons/icon.svg",
     "default_title": "Workspaces",
     "default_popup": "popup/popup.html"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
   },
   "commands": {
     "_execute_browser_action": {
@@ -51,9 +58,5 @@
       "background/backup.js",
       "background/main.js"
     ]
-  },
-  "options_ui": {
-    "page": "options/options.html",
-    "open_in_tab": true
   }
 }

@@ -17,6 +17,18 @@
       </section>
 
       <section>
+        <h2>Container tabs</h2>
+        <p>
+          Rebuilding a closed workspace can only put a tab back in its container with permission
+          to read cookies. Without it those tabs come back in the default container. Reopening a
+          window that Firefox still remembers keeps containers either way, so this only matters
+          after a restart.
+        </p>
+        <p id="perm-state" class="status" hidden></p>
+        <button id="perm-toggle" class="btn">Checking…</button>
+      </section>
+
+      <section>
         <h2>Settings file</h2>
         <p>
           Settings are backed up on their own, separately from workspaces, so you can carry a setup

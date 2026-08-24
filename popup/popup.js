@@ -520,9 +520,12 @@ document.getElementById('backup').addEventListener('click', event => {
   window.close()
 })
 
-document.getElementById('diag').addEventListener('click', async event => {
-  event.preventDefault()
-  const dump = JSON.stringify(await send('diagnostics'), null, 2)
+// The dump is made to be pasted somewhere public, so it leaves out page titles
+// and shortens addresses to their site. The checkbox puts the detail back for
+// the rare bug that is about one specific page.
+async function copyDiagnostics(target) {
+  const full = document.getElementById('diagfull').checked
+  const dump = JSON.stringify(await send('diagnostics', { full }), null, 2)
 
   const out = document.getElementById('diagout')
   out.value = dump
@@ -531,11 +534,21 @@ document.getElementById('diag').addEventListener('click', async event => {
 
   try {
     await navigator.clipboard.writeText(dump)
-    event.target.textContent = 'copied'
+    target.textContent = full ? 'copied, with addresses' : 'copied'
   } catch {
-    event.target.textContent = 'select all and copy'
+    target.textContent = 'select all and copy'
   }
+}
+
+document.getElementById('diag').addEventListener('click', async event => {
+  event.preventDefault()
+  document.getElementById('diagnote').hidden = false
+  await copyDiagnostics(event.target)
 })
+
+document.getElementById('diagfull').addEventListener('change', () =>
+  copyDiagnostics(document.getElementById('diag'))
+)
 
 // Settings arrive before the first paint so the popup never renders at one
 // size and then jumps to another.

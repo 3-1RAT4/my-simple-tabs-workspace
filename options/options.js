@@ -14,6 +14,32 @@ function stamp() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
+// ---- optional permissions ---------------------------------------------------
+
+const COOKIES = { permissions: ['cookies'] }
+
+async function renderPermission() {
+  const granted = await browser.permissions.contains(COOKIES)
+  const state = document.getElementById('perm-state')
+  const button = document.getElementById('perm-toggle')
+
+  state.hidden = false
+  state.textContent = granted
+    ? 'Granted. Rebuilt tabs return to their containers.'
+    : 'Not granted. Rebuilt tabs return to the default container.'
+  state.dataset.kind = granted ? 'ok' : ''
+  button.textContent = granted ? 'Withdraw permission' : 'Allow container tabs'
+}
+
+document.getElementById('perm-toggle').addEventListener('click', async () => {
+  // request() and remove() both need a user gesture, which is why this lives on
+  // a button rather than being asked for when a restore happens to need it.
+  const granted = await browser.permissions.contains(COOKIES)
+  if (granted) await browser.permissions.remove(COOKIES)
+  else await browser.permissions.request(COOKIES)
+  await renderPermission()
+})
+
 // ---- settings ---------------------------------------------------------------
 
 // The schema comes from the background, so this page renders whatever the
@@ -172,3 +198,4 @@ document.getElementById('import').addEventListener('change', async event => {
 })
 
 renderSettings().catch(err => say(String(err?.message ?? err), 'error'))
+renderPermission().catch(err => say(String(err?.message ?? err), 'error'))

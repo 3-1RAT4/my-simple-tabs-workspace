@@ -391,6 +391,23 @@ export function createFakeBrowser(options = {}) {
       onMoved: listener(),
     },
 
+    permissions: {
+      async contains({ permissions: wanted = [] }) {
+        return wanted.every(p => permissions.includes(p))
+      },
+      async request({ permissions: wanted = [] }) {
+        for (const p of wanted) if (!permissions.includes(p)) permissions.push(p)
+        return true
+      },
+      async remove({ permissions: wanted = [] }) {
+        for (const p of wanted) {
+          const i = permissions.indexOf(p)
+          if (i !== -1) permissions.splice(i, 1)
+        }
+        return true
+      },
+    },
+
     menus: {
       async removeAll() {
         state.menus.clear()

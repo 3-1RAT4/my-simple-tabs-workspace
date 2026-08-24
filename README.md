@@ -98,6 +98,33 @@ state are kept.
 Everything read from a file is validated. A backup is editable text, including
 one this add-on wrote.
 
+## Diagnostics
+
+The `diagnostics` link in the popup footer copies a JSON dump: version,
+permissions, window and workspace bindings, every window's tabs with their group
+ids and containers, and a log of recent warnings.
+
+It is made to be pasted into an issue or a chat, so it leaves out anything that
+identifies a page. Addresses are cut to their site, `https://bank.example.com/…`,
+and titles are dropped entirely - a title says more than the address it came
+from. Structure is what has actually diagnosed every bug here, and structure is
+kept in full. A checkbox restores the detail when a specific page is the bug.
+
+## Permissions
+
+| Permission | Why |
+|---|---|
+| `tabs` | read and move the tabs a workspace is made of |
+| `sessions` | remember which workspace a window shows, across restarts |
+| `storage` | workspace names, colours, ordering and snapshots |
+| `tabGroups` | keep native tab groups through a close and reopen |
+| `menus` | the *Move tab to workspace* item |
+| `cookies` (optional) | rebuild a tab in its container after a restart. Asked for from the options page, never at install |
+
+No host permissions, no content scripts, and nothing loaded from the network.
+The content security policy is declared explicitly rather than relying on the
+default.
+
 ## Storage layout
 
 ```
