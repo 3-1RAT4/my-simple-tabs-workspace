@@ -7,6 +7,10 @@ const errEl = document.getElementById('error')
 const hintEl = document.getElementById('hint')
 
 let settings = null
+// Which editor is open, so re-rendering can put it back. Every choice inside an
+// editor re-renders the list, which used to destroy the panel mid-edit: the
+// selection you had just made vanished along with it.
+let openEditorFor = null
 let workspaces = []
 let visible = []
 let focusIndex = 0
@@ -80,7 +84,26 @@ function render() {
     listEl.append(renderWorkspace(item, index))
   })
 
+  restoreOpenEditor()
   listEl.children[focusIndex]?.scrollIntoView({ block: 'nearest' })
+}
+
+function restoreOpenEditor() {
+  if (!openEditorFor) return
+
+  const item = visible.find(entry => entry.id === openEditorFor)
+  // Scanning beats a selector here: no escaping to get wrong, and the list is
+  // short enough that it costs nothing.
+  const row = [...listEl.children].find(el => el.dataset.id === openEditorFor)
+  if (!item || !row) {
+    openEditorFor = null
+    return
+  }
+
+  // Rebuild the panel from the item as it now is, so the selection shown is
+  // the value that was actually stored.
+  if (item.type === 'separator') buildSeparatorEditor(row, item)
+  else buildWorkspaceEditor(row, item)
 }
 
 // A rule with an optional label, which can sit left, centre or right and take
@@ -145,15 +168,25 @@ function toggleSeparatorEditor(row, item) {
   if (existing?.classList.contains('editor')) {
     existing.remove()
     delete row.dataset.editing
+    openEditorFor = null
     return
   }
 
+  openEditorFor = item.id
+  buildSeparatorEditor(row, item)
+}
+
+function buildSeparatorEditor(row, item) {
   document.querySelectorAll('.editor').forEach(el => el.remove())
   document.querySelectorAll('[data-editing]').forEach(el => delete el.dataset.editing)
   row.dataset.editing = 'true'
 
   const panel = document.createElement('li')
   panel.className = 'editor'
+
+  const heading = document.createElement('p')
+  heading.className = 'draft-heading'
+  heading.textContent = `Separator · ${item.align || 'left'} · ${item.color || 'default'}`
 
   const input = document.createElement('input')
   input.className = 'rename'
@@ -201,7 +234,7 @@ function toggleSeparatorEditor(row, item) {
     })
   }
 
-  panel.append(input, aligns, colors)
+  panel.append(heading, input, aligns, colors)
   row.after(panel)
   input.focus()
   input.select()
@@ -344,9 +377,15 @@ function toggleEditor(row, ws) {
   if (existing?.classList.contains('editor')) {
     existing.remove()
     delete row.dataset.editing
+    openEditorFor = null
     return
   }
 
+  openEditorFor = ws.id
+  buildWorkspaceEditor(row, ws)
+}
+
+function buildWorkspaceEditor(row, ws) {
   document.querySelectorAll('.editor').forEach(el => el.remove())
   document.querySelectorAll('.row').forEach(el => delete el.dataset.editing)
   row.dataset.editing = 'true'

@@ -99,10 +99,10 @@ const tests = [
     click(env.dom, env.doc.getElementById('add-sep'))
     await new Promise(r => setTimeout(r, 80))
 
+    // One trip through the editor: it stays open across choices now.
     click(env.dom, env.doc.querySelector('.sep-label'))
     click(env.dom, env.doc.querySelector('.align-opt[data-align="center"]'))
     await new Promise(r => setTimeout(r, 80))
-    click(env.dom, env.doc.querySelector('.sep-label'))
     click(env.dom, env.doc.querySelector('.editor .swatch[data-color="orange"]'))
     await new Promise(r => setTimeout(r, 80))
 
@@ -218,6 +218,53 @@ const tests = [
     eq(env.doc.getElementById('notice').hidden, true, 'notice cleared')
     const granted = await env.browser.permissions.contains({ permissions: ['cookies'] })
     eq(granted, true, 'and the permission was asked for and kept')
+  }),
+
+  test('the editor stays open after a choice, showing what was stored', async () => {
+    const env = await boot()
+    click(env.dom, env.doc.getElementById('add-sep'))
+    await new Promise(r => setTimeout(r, 80))
+
+    click(env.dom, env.doc.querySelector('.sep-label'))
+    ok(env.doc.querySelector('.editor'), 'editor opened')
+
+    click(env.dom, env.doc.querySelector('.align-opt[data-align="center"]'))
+    await new Promise(r => setTimeout(r, 80))
+
+    // It used to close here, taking the selection with it.
+    const panel = env.doc.querySelector('.editor')
+    ok(panel, 'editor still open after choosing')
+    eq(
+      panel.querySelector('.align-opt[data-align="center"]').dataset.selected,
+      'true',
+      'and the choice is shown as selected'
+    )
+    ok(panel.querySelector('.draft-heading').textContent.includes('center'), 'heading states it')
+  }),
+
+  test('the row and storage agree on the alignment after a click', async () => {
+    const env = await boot()
+    click(env.dom, env.doc.getElementById('add-sep'))
+    await new Promise(r => setTimeout(r, 80))
+    click(env.dom, env.doc.querySelector('.sep-label'))
+    click(env.dom, env.doc.querySelector('.align-opt[data-align="right"]'))
+    await new Promise(r => setTimeout(r, 80))
+
+    const stored = Object.values((await env.Store.loadIndex()).separators)[0]
+    eq(stored.align, 'right', 'stored')
+    eq(env.doc.querySelector('.sep').dataset.align, 'right', 'and on the row')
+  }),
+
+  test('closing the editor stops it coming back on the next render', async () => {
+    const env = await boot()
+    click(env.dom, env.doc.getElementById('add-sep'))
+    await new Promise(r => setTimeout(r, 80))
+
+    const label = env.doc.querySelector('.sep-label')
+    click(env.dom, label)
+    click(env.dom, env.doc.querySelector('.sep-label'))
+    await new Promise(r => setTimeout(r, 80))
+    ok(!env.doc.querySelector('.editor'), 'closed and stayed closed')
   }),
 
   test('every alignment has a rule that lays the row out differently', async () => {
