@@ -47,6 +47,19 @@ browser.runtime.onMessage.addListener(async msg => {
       refreshMenu()
       return await Util.serial(() => Workspaces.list(windowId))
 
+    case 'backup':
+      return await Util.serial(() => Backup.exportAll())
+
+    case 'restore':
+      // The message carries a file the user chose, so a bad one is an expected
+      // outcome, not a crash: report it as text the page can show.
+      try {
+        return await Util.serial(() => Backup.importAll(msg.text, msg.mode))
+      } catch (err) {
+        Diagnostics.warn('restore refused:', err)
+        return { error: String(err?.message ?? err) }
+      }
+
     case 'diagnostics':
       return await Diagnostics.dump()
 

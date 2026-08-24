@@ -329,6 +329,12 @@ document.getElementById('new').addEventListener('click', async () => {
   window.close()
 })
 
+document.getElementById('backup').addEventListener('click', event => {
+  event.preventDefault()
+  browser.runtime.openOptionsPage()
+  window.close()
+})
+
 document.getElementById('diag').addEventListener('click', async event => {
   event.preventDefault()
   const dump = JSON.stringify(await send('diagnostics'), null, 2)

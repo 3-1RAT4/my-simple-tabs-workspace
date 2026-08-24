@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Simple Tab Workspaces",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "One workspace per window. A global list of workspaces, each opening in its own window.",
   "browser_specific_settings": {
     "gecko": {
@@ -47,7 +47,12 @@
       "background/diagnostics.js",
       "background/groups.js",
       "background/workspaces.js",
+      "background/backup.js",
       "background/main.js"
     ]
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
   }
 }

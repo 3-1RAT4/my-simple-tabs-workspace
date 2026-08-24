@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Simple Tab Workspaces</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Backup</h1>
+
+      <section>
+        <h2>Save a backup</h2>
+        <p>
+          Writes every workspace, its tabs and its tab groups to a JSON file. Open windows are
+          included as they were last saved.
+        </p>
+        <button id="export" class="btn">Save backup file</button>
+      </section>
+
+      <section>
+        <h2>Restore a backup</h2>
+        <p>
+          Restored workspaces arrive closed. Open one from the toolbar popup to bring its window
+          back.
+        </p>
+
+        <div class="field">
+          <label class="radio">
+            <input type="radio" name="mode" value="merge" checked />
+            <span><strong>Add to what I have</strong> — keeps current workspaces</span>
+          </label>
+          <label class="radio">
+            <input type="radio" name="mode" value="replace" />
+            <span><strong>Replace everything</strong> — deletes current workspaces first</span>
+          </label>
+        </div>
+
+        <label class="btn file">
+          Choose a backup file
+          <input id="import" type="file" accept="application/json,.json" />
+        </label>
+      </section>
+
+      <p id="status" class="status" hidden role="status"></p>
+
+      <section class="about">
+        <h2>About the file</h2>
+        <p>
+          The format carries a version number, and unknown fields are kept as they are. A backup
+          from an older release restores into a newer one, and a newer file is refused with a clear
+          message rather than being read incorrectly.
+        </p>
+        <p class="warn">
+          A backup lists every page in every workspace. Treat it like your history.
+        </p>
+      </section>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

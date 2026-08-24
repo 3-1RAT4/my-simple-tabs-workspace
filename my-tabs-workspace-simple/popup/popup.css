@@ -352,6 +352,12 @@ body {
   flex-shrink: 0;
 }
 
+.links {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
 .diagout {
   width: calc(100% - 12px);
   height: 90px;

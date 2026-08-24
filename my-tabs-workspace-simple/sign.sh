@@ -9,7 +9,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
-WEB_EXT="${WEB_EXT:-/var/home/rodz/Projects/sidebery/node_modules/.bin/web-ext}"
+WEB_EXT="${WEB_EXT:-$(cd .. && pwd)/node_modules/.bin/web-ext}"
 OUT="$HOME/Downloads/simple-tab-workspaces-signed.xpi"
 
 : "${AMO_JWT_ISSUER:?set AMO_JWT_ISSUER}"
@@ -18,10 +18,15 @@ OUT="$HOME/Downloads/simple-tab-workspaces-signed.xpi"
 "$WEB_EXT" sign \
   --source-dir . \
   --artifacts-dir web-ext-artifacts \
-  --ignore-files "*.sh" "README.md" \
+  --ignore-files "*.sh" "README.md" "test/**" \
   --channel unlisted \
   --api-key "$AMO_JWT_ISSUER" \
   --api-secret "$AMO_JWT_SECRET"
 
 cp "$(ls -t web-ext-artifacts/*.xpi | head -1)" "$OUT"
+
+echo
 echo "signed: $OUT"
+echo "version: $(python3 -c "import json;print(json.load(open('manifest.json'))['version'])")"
+echo
+echo "Install it: about:addons -> gear -> Install Add-on From File"

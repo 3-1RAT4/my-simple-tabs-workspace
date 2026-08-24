@@ -36,6 +36,47 @@ workspace is open its tabs are simply that window's tabs.
 | hollow dot | open in another window |
 | small dot, dimmed | closed; the count is its saved tabs |
 
+## Backup
+
+Add-ons manager -> Simple Tab Workspaces -> Preferences, or `backup` in the popup
+footer. Saves every workspace, its tabs and its tab groups to a JSON file, and
+restores one either alongside the current workspaces or in place of them.
+Restored workspaces arrive closed.
+
+The file is designed to stay readable across releases:
+
+```json
+{
+  "format": "simple-tab-workspaces",
+  "formatVersion": 1,
+  "app": { "name": "Simple Tab Workspaces", "version": "1.0.7" },
+  "exportedAt": "2026-08-24T12:00:00.000Z",
+  "workspaces": [
+    { "id": "...", "name": "Research", "color": "purple", "icon": "\ud83d\udcda",
+      "tabs": [ { "url": "...", "title": "...", "pinned": false, "active": true,
+                  "cookieStoreId": "firefox-default", "groupKey": 0 } ],
+      "groups": [ { "title": "Reading", "color": "cyan", "collapsed": false } ] }
+  ]
+}
+```
+
+Four rules make that work:
+
+1. `formatVersion` rises only for a **breaking** change. New fields do not bump it.
+2. Unknown fields are **preserved**, not dropped, so a file written by a later
+   release survives a round trip through this one.
+3. A file from a newer format is **refused with a clear message** rather than
+   read incorrectly.
+4. Old files stay importable through a chain of migrations, `MIGRATIONS[n]`
+   taking version n to n+1.
+
+Runtime-only values are excluded: window bindings, and the numeric tab group
+ids, which mean nothing in another profile. Group titles, colours and collapsed
+state are kept.
+
+Everything read from a file is validated. A backup is editable text, including
+one this add-on wrote.
+
 ## Storage layout
 
 ```
@@ -77,7 +118,9 @@ background/store.js        storage and session helpers
 background/groups.js       native tab group snapshot and rebuild
 background/workspaces.js   all workspace logic
 background/main.js         listeners, popup messages, context menu
+background/backup.js       the backup format, its rules and migrations
 shared/palette.js          colours and icons, shared by background and popup
+options/                   the backup page
 popup/                     the toolbar popup
 ```
 
