@@ -30,6 +30,10 @@
 // numeric group ids, which mean nothing in another profile or after a restart.
 
 const Backup = {
+  // These strings identify the file format, not the add-on, and they are
+  // deliberately not renamed when the add-on is. Changing one would make every
+  // backup already written unreadable, for no gain: a reader matches on the
+  // format string, and nobody reads it.
   FORMAT: 'simple-tab-workspaces',
   SETTINGS_FORMAT: 'simple-tab-workspaces-settings',
   VERSION: 1,

@@ -1,4 +1,4 @@
-# Simple Tab Workspaces
+# My Simple Tabs Workspace
 
 Per-window tab workspaces for Firefox / LibreWolf. Switching a workspace hides
 one set of tabs and shows another. No sidebar, no theming, no tab tree — the
@@ -45,6 +45,10 @@ Two separate files, because they answer different questions. Workspaces are your
 tabs; settings are how the add-on behaves. Carrying a setup to another profile
 should not bring that profile's tabs with it.
 
+The `format` strings identify the file format rather than the add-on, so they
+kept their original spelling through the rename. Renaming them would strand
+every backup already written.
+
 | File | `format` | Holds |
 |---|---|---|
 | Workspaces | `simple-tab-workspaces` | workspaces, tabs, groups, separators, order |
@@ -53,7 +57,7 @@ should not bring that profile's tabs with it.
 Each refuses to be restored as the other, naming what the file actually is and
 which control to use.
 
-Add-ons manager -> Simple Tab Workspaces -> Preferences, or `backup` in the popup
+Add-ons manager -> My Simple Tabs Workspace -> Preferences, or `backup` in the popup
 footer. Saves every workspace, its tabs and its tab groups to a JSON file, and
 restores one either alongside the current workspaces or in place of them.
 Restored workspaces arrive closed.
@@ -64,7 +68,7 @@ The file is designed to stay readable across releases:
 {
   "format": "simple-tab-workspaces",
   "formatVersion": 1,
-  "app": { "name": "Simple Tab Workspaces", "version": "1.0.7" },
+  "app": { "name": "My Simple Tabs Workspace", "version": "1.1.0" },
   "exportedAt": "2026-08-24T12:00:00.000Z",
   "workspaces": [
     { "id": "...", "name": "Research", "color": "purple", "icon": "\ud83d\udcda",
@@ -175,6 +179,6 @@ The LibreWolf flatpak sandbox can only read `~/Downloads`, so the extension has
 to live there (or the sandbox needs `flatpak override --user
 --filesystem=<dir>:ro io.gitlab.librewolf-community`).
 
-Permanent: `./build.sh` writes `~/Downloads/simple-tab-workspaces.xpi`, which
+Permanent: `./build.sh` writes `~/Downloads/my-simple-tabs-workspace.xpi`, which
 installs once `xpinstall.signatures.required` is `false`. `./sign.sh` signs it
 through addons.mozilla.org instead, so signature enforcement can stay on.

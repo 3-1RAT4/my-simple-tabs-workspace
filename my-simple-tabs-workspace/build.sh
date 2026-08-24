@@ -17,7 +17,7 @@ print(f"version -> {m['version']}")
 PYEOF
 fi
 WEB_EXT="${WEB_EXT:-/var/home/rodz/Projects/sidebery/node_modules/.bin/web-ext}"
-OUT="$HOME/Downloads/simple-tab-workspaces.xpi"
+OUT="$HOME/Downloads/my-simple-tabs-workspace.xpi"
 
 "$WEB_EXT" build --source-dir . --artifacts-dir web-ext-artifacts --overwrite-dest --ignore-files "*.sh" "README.md" "test/**" >/dev/null
 cp "$(ls -t web-ext-artifacts/*.zip | head -1)" "$OUT"

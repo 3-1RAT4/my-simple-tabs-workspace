@@ -94,7 +94,7 @@ document.getElementById('reset').addEventListener('click', async () => {
 document.getElementById('export-settings').addEventListener('click', async () => {
   try {
     const doc = await browser.runtime.sendMessage({ method: 'backupSettings' })
-    download(doc, `simple-tab-workspaces-settings-${stamp()}.json`)
+    download(doc, `my-simple-tabs-workspace-settings-${stamp()}.json`)
     say('Saved your settings.')
   } catch (err) {
     say(String(err?.message ?? err), 'error')
@@ -135,7 +135,7 @@ function download(doc, filename) {
 document.getElementById('export').addEventListener('click', async () => {
   try {
     const doc = await browser.runtime.sendMessage({ method: 'backup' })
-    download(doc, `simple-tab-workspaces-${stamp()}.json`)
+    download(doc, `my-simple-tabs-workspace-${stamp()}.json`)
     say(`Saved ${doc.workspaces.length} workspaces.`)
   } catch (err) {
     say(String(err?.message ?? err), 'error')

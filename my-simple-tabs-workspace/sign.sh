@@ -10,7 +10,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 WEB_EXT="${WEB_EXT:-$(cd .. && pwd)/node_modules/.bin/web-ext}"
-OUT="$HOME/Downloads/simple-tab-workspaces-signed.xpi"
+OUT="$HOME/Downloads/my-simple-tabs-workspace-signed.xpi"
 
 : "${AMO_JWT_ISSUER:?set AMO_JWT_ISSUER}"
 : "${AMO_JWT_SECRET:?set AMO_JWT_SECRET}"
