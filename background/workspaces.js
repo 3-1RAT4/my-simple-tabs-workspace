@@ -156,7 +156,12 @@ const Workspaces = {
     const index = await Store.loadIndex()
     const id = `sep-${Util.uuid()}`
     index.order.push(id)
-    index.separators[id] = Workspaces._cleanSeparator({}, patch)
+    // A new separator arrives labelled so it is visible and obviously editable;
+    // clearing the label leaves a plain rule.
+    index.separators[id] = Workspaces._cleanSeparator(
+      { label: Workspaces.DEFAULT_SEPARATOR_LABEL },
+      patch
+    )
     await Store.saveIndex(index)
     return id
   },
@@ -172,6 +177,8 @@ const Workspaces = {
     index.separators[sepId] = Workspaces._cleanSeparator(current, patch)
     await Store.saveIndex(index)
   },
+
+  DEFAULT_SEPARATOR_LABEL: '---SEPARATOR---',
 
   _cleanSeparator(current, patch) {
     const out = {

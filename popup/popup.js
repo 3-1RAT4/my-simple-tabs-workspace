@@ -97,7 +97,7 @@ function renderSeparator(item) {
   if (item.label) row.setAttribute('aria-label', item.label)
 
   const lineBefore = document.createElement('span')
-  lineBefore.className = 'sep-line'
+  lineBefore.className = 'sep-line sep-line-before'
 
   const label = document.createElement('span')
   label.className = 'sep-label'
@@ -105,7 +105,7 @@ function renderSeparator(item) {
   label.title = 'Click to edit this separator'
 
   const lineAfter = document.createElement('span')
-  lineAfter.className = 'sep-line'
+  lineAfter.className = 'sep-line sep-line-after'
 
   const actions = document.createElement('span')
   actions.className = 'actions sep-actions'
@@ -686,28 +686,35 @@ async function start() {
 // offer the permission here: a popup is an extension page, so the request can
 // be made straight from this click.
 async function showNotices() {
-  const { containerNotice } = await send('notices')
-  if (!containerNotice) return
-
   const bar = document.getElementById('notice')
+  const { containerNotice } = await send('notices')
+
+  if (!containerNotice) {
+    bar.hidden = true
+    return
+  }
+
   const count = containerNotice.count
   document.getElementById('notice-text').textContent =
-    `${count} tab${count === 1 ? '' : 's'} reopened outside ${count === 1 ? 'its' : 'their'} container.`
+    `${count} tab${count === 1 ? '' : 's'} reopened outside ${
+      count === 1 ? 'its' : 'their'
+    } container. Allowing containers keeps them next time.`
   bar.hidden = false
-
-  document.getElementById('notice-fix').addEventListener('click', async () => {
-    const granted = await browser.permissions.request({ permissions: ['cookies'] })
-    if (granted) {
-      await send('dismissNotice')
-      bar.hidden = true
-    }
-  })
-
-  document.getElementById('notice-dismiss').addEventListener('click', async () => {
-    await send('dismissNotice')
-    bar.hidden = true
-  })
 }
+
+// Wired once at load rather than when a notice appears, so the buttons are
+// never on screen without a handler behind them.
+document.getElementById('notice-fix').addEventListener('click', async () => {
+  const granted = await browser.permissions.request({ permissions: ['cookies'] })
+  if (!granted) return
+  await send('dismissNotice')
+  document.getElementById('notice').hidden = true
+})
+
+document.getElementById('notice-dismiss').addEventListener('click', async () => {
+  await send('dismissNotice')
+  document.getElementById('notice').hidden = true
+})
 
 function applySettings(values) {
   const root = document.documentElement

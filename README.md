@@ -28,9 +28,9 @@ workspace is open its tabs are simply that window's tabs.
   readable at a glance. Colours match Firefox's own tab group colours.
 - **Drag a row to reorder the list.**
 - Right-click a tab -> *Move tab to workspace*.
-- **Separators** to group the list. Click one to open its editor: a label, an
-  alignment (left, centre or right) and a colour. Leave the label empty for a
-  plain rule. Drag them like any other row.
+- **Separators** to group the list. A new one arrives labelled `---SEPARATOR---`.
+  Click it to open its editor: a label, an alignment (left, centre or right) and
+  a colour. Clear the label for a plain rule. Drag them like any other row.
 - **Find a workspace** by typing in the filter at the top.
 - Native tab groups are saved and rebuilt when a workspace reopens.
 

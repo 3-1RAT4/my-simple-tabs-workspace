@@ -59,6 +59,12 @@
   box-sizing: border-box;
 }
 
+/* An author rule with display: flex beats the browser's [hidden] { display:
+   none }, so anything that sets display has to say this itself. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   width: calc(288px * var(--scale));
@@ -485,9 +491,11 @@ body {
   flex: 0 0 0;
 }
 
-.sep[data-align='left'] .sep-line:nth-of-type(2),
+/* Which line grows is what alignment means. These are matched by class: every
+   child of .sep is a span, so :nth-of-type counted the label as a line. */
+.sep[data-align='left'] .sep-line-after,
 .sep[data-align='center'] .sep-line,
-.sep[data-align='right'] .sep-line:first-of-type {
+.sep[data-align='right'] .sep-line-before {
   flex: 1 1 auto;
 }
 
