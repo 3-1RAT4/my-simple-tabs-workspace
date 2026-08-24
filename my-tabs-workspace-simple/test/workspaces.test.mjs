@@ -227,6 +227,62 @@ const tests = [
     eq((await env.Store.loadWs(wsId)).name, 'Archive', 'renamed while closed')
   }),
 
+  test('a separator keeps its place in the list', async () => {
+    const env = boot()
+    const first = await env.Workspaces.create()
+    const sepId = await env.Workspaces.addSeparator('Personal')
+    const second = await env.Workspaces.create()
+
+    const list = await env.Workspaces.list(env.Workspaces.byWs.get(first))
+    eq(list.map(i => i.type), ['workspace', 'separator', 'workspace'], 'order preserved')
+    eq(list[1].id, sepId, 'the separator we added')
+    eq(list[1].label, 'Personal', 'with its label')
+    eq(list[2].id, second, 'workspace after it')
+  }),
+
+  test('a separator can be relabelled and removed', async () => {
+    const env = boot()
+    const wsId = await env.Workspaces.create()
+    const sepId = await env.Workspaces.addSeparator('Old')
+
+    await env.Workspaces.updateSeparator(sepId, '  Renamed  ')
+    let list = await env.Workspaces.list(env.Workspaces.byWs.get(wsId))
+    eq(list.find(i => i.id === sepId).label, 'Renamed', 'trimmed and saved')
+
+    await env.Workspaces.removeSeparator(sepId)
+    list = await env.Workspaces.list(env.Workspaces.byWs.get(wsId))
+    eq(list.filter(i => i.type === 'separator').length, 0, 'gone')
+  }),
+
+  test('separators do not count as workspaces', async () => {
+    const env = boot()
+    const wsId = await env.Workspaces.create()
+    await env.Workspaces.addSeparator('Divider')
+
+    // The last workspace is still the last one, separators notwithstanding.
+    try {
+      await env.Workspaces.remove(wsId)
+      throw new Error('should have refused')
+    } catch (err) {
+      ok(err.message.includes('last workspace'), 'refused for the right reason')
+    }
+
+    // And the next workspace is numbered 2, not 3.
+    const next = await env.Workspaces.create()
+    eq((await env.Store.loadWs(next)).name, 'Workspace 2', 'numbering ignores separators')
+  }),
+
+  test('reordering moves separators along with workspaces', async () => {
+    const env = boot()
+    const a = await env.Workspaces.create()
+    const sepId = await env.Workspaces.addSeparator('Line')
+    const b = await env.Workspaces.create()
+
+    await env.Workspaces.reorder([b, sepId, a])
+    const list = await env.Workspaces.list(env.Workspaces.byWs.get(a))
+    eq(list.map(i => i.id), [b, sepId, a], 'new arrangement stored')
+  }),
+
   test('workspaces survive a restart via the window session value', async () => {
     const env = boot()
     const wsId = await env.Workspaces.create()

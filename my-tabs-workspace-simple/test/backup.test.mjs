@@ -207,6 +207,41 @@ const tests = [
     ok(await fresh.Store.loadWs(boundTo), 'and that workspace exists')
   }),
 
+  test('separators travel in the backup and keep their arrangement', async () => {
+    const env = boot()
+    await seed(env)
+    const sepId = await env.Workspaces.addSeparator('Personal')
+    const second = await env.Workspaces.create()
+    await env.Workspaces.update(second, { name: 'Shopping' })
+
+    const doc = await env.Backup.exportAll()
+    eq(doc.separators.length, 1, 'separator exported')
+    eq(doc.separators[0].label, 'Personal', 'with its label')
+    ok(doc.order.includes(sepId), 'and its place in the order')
+
+    const fresh = boot()
+    await fresh.Backup.importAll(JSON.stringify(doc), 'replace')
+
+    const list = await fresh.Workspaces.list(-1)
+    const types = list.map(i => i.type)
+    ok(types.includes('separator'), 'separator restored')
+    eq(list.find(i => i.type === 'separator').label, 'Personal', 'label restored')
+    eq(types.indexOf('separator'), 1, 'still between the two workspaces')
+  }),
+
+  test('a backup without separators still restores cleanly', async () => {
+    const env = boot()
+    const doc = {
+      format: 'simple-tab-workspaces',
+      formatVersion: 1,
+      workspaces: [{ id: 'a', name: 'Solo', tabs: [] }],
+    }
+    await env.Backup.importAll(JSON.stringify(doc), 'replace')
+    const list = await env.Workspaces.list(-1)
+    eq(list.filter(i => i.type === 'workspace').length, 1, 'workspace restored')
+    eq(list.filter(i => i.type === 'separator').length, 0, 'no separators invented')
+  }),
+
   test('a workspace with no name is skipped rather than imported blank', async () => {
     const env = boot()
     const doc = {

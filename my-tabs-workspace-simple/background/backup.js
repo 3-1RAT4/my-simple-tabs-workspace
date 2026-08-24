@@ -43,6 +43,7 @@ const Backup = {
 
   async exportAll() {
     const all = await Store.loadAll()
+    const index = await Store.loadIndex()
 
     return {
       format: Backup.FORMAT,
@@ -53,6 +54,13 @@ const Backup = {
       },
       exportedAt: new Date().toISOString(),
       workspaces: all.map(Backup._exportWorkspace),
+      // Additive, so formatVersion stays at 1: a reader that predates
+      // separators ignores these two and still restores every workspace.
+      order: index.order,
+      separators: Object.entries(index.separators).map(([id, sep]) => ({
+        id,
+        label: sep.label || '',
+      })),
     }
   },
 
@@ -132,19 +140,50 @@ const Backup = {
 
     if (mode === 'replace') {
       for (const ws of await Store.loadAll()) await Store.removeWs(ws.id)
+      const old = await Store.loadIndex()
+      for (const id of old.order.filter(Store.isSeparatorId)) await Store.removeSeparator(id)
     }
 
     const index = await Store.loadIndex()
     const taken = new Set(index.order)
+    const idMap = new Map()
+
+    // Separators, when the file has them. Ids are remapped alongside the
+    // workspaces so a merge cannot collide with what is already there.
+    const sepMap = new Map()
+    if (Array.isArray(doc.separators)) {
+      for (const sep of doc.separators.slice(0, 50)) {
+        if (!sep || typeof sep.id !== 'string') continue
+        const id = taken.has(sep.id) ? `sep-${Util.uuid()}` : sep.id
+        sepMap.set(sep.id, id)
+        taken.add(id)
+        index.separators[id] = {
+          label: typeof sep.label === 'string' ? sep.label.trim().slice(0, 40) : '',
+        }
+      }
+    }
 
     for (const ws of clean) {
       // A fresh id whenever the old one is in use, so a merge never overwrites
       // a workspace that is open right now.
+      ws.originalId = ws.id
       if (!ws.id || taken.has(ws.id)) ws.id = Util.uuid()
       taken.add(ws.id)
 
       await Store.saveWs(ws)
+      idMap.set(ws.originalId ?? ws.id, ws.id)
+      delete ws.originalId
       index.order.push(ws.id)
+    }
+
+    // Where the file recorded an arrangement, rebuild it so separators land
+    // between the right workspaces instead of all at the end.
+    if (Array.isArray(doc.order)) {
+      const mapped = doc.order
+        .map(id => sepMap.get(id) ?? idMap.get(id))
+        .filter(id => id && (index.separators[id] || idMap.has(id) || !Store.isSeparatorId(id)))
+      const missing = index.order.filter(id => !mapped.includes(id))
+      if (mapped.length) index.order = [...missing, ...mapped]
     }
 
     await Store.saveIndex(index)

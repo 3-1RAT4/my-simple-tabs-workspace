@@ -84,7 +84,7 @@ const Workspaces = {
     const index = await Store.loadIndex()
     const ws = {
       id: Util.uuid(),
-      name: `Workspace ${index.order.length + 1}`,
+      name: `Workspace ${index.order.filter(id => !Store.isSeparatorId(id)).length + 1}`,
       color: Palette.DEFAULT_COLOR,
       icon: Palette.DEFAULT_ICON,
       tabs: [],
@@ -98,12 +98,22 @@ const Workspaces = {
     return ws.id
   },
 
+  // Returns the list as it should be shown: workspaces and separators in the
+  // order the user arranged them.
   async list(currentWindowId) {
-    const all = await Store.loadAll()
+    const index = await Store.loadIndex()
     const currentWsId = Workspaces.byWindow.get(currentWindowId)
 
     const out = []
-    for (const ws of all) {
+    for (const id of index.order) {
+      if (Store.isSeparatorId(id)) {
+        out.push({ type: 'separator', id, label: index.separators[id]?.label || '' })
+        continue
+      }
+
+      const ws = await Store.loadWs(id)
+      if (!ws) continue
+
       const windowId = Workspaces.byWs.get(ws.id)
       const open = windowId !== undefined
 
@@ -117,6 +127,7 @@ const Workspaces = {
       }
 
       out.push({
+        type: 'workspace',
         id: ws.id,
         name: ws.name,
         color: ws.color || Palette.DEFAULT_COLOR,
@@ -126,7 +137,30 @@ const Workspaces = {
         tabCount,
       })
     }
+
     return out
+  },
+
+  // ---- separators ----------------------------------------------------------
+
+  async addSeparator(label = '') {
+    const index = await Store.loadIndex()
+    const id = `sep-${Util.uuid()}`
+    index.order.push(id)
+    index.separators[id] = { label: String(label).trim().slice(0, 40) }
+    await Store.saveIndex(index)
+    return id
+  },
+
+  async updateSeparator(sepId, label) {
+    const index = await Store.loadIndex()
+    if (!index.separators[sepId]) return
+    index.separators[sepId] = { label: String(label ?? '').trim().slice(0, 40) }
+    await Store.saveIndex(index)
+  },
+
+  async removeSeparator(sepId) {
+    await Store.removeSeparator(sepId)
   },
 
   // Clicking a workspace: raise its window if it has one, otherwise give it a
@@ -292,7 +326,7 @@ const Workspaces = {
     const index = await Store.loadIndex()
     const ws = {
       id: Util.uuid(),
-      name: `Workspace ${index.order.length + 1}`,
+      name: `Workspace ${index.order.filter(id => !Store.isSeparatorId(id)).length + 1}`,
       color: Palette.DEFAULT_COLOR,
       icon: Palette.DEFAULT_ICON,
       tabs: [],
@@ -336,7 +370,8 @@ const Workspaces = {
 
   async remove(wsId) {
     const index = await Store.loadIndex()
-    if (index.order.length <= 1) throw new Error('Cannot delete the last workspace')
+    const workspaceCount = index.order.filter(id => !Store.isSeparatorId(id)).length
+    if (workspaceCount <= 1) throw new Error('Cannot delete the last workspace')
 
     const windowId = Workspaces.byWs.get(wsId)
     if (windowId !== undefined) {

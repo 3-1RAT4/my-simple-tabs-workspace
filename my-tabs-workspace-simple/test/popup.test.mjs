@@ -37,10 +37,29 @@ function mount(workspaces) {
   return dom
 }
 
+const ws = (id, name, extra = {}) => ({
+  type: 'workspace',
+  id,
+  name,
+  open: true,
+  current: false,
+  tabCount: 1,
+  color: 'default',
+  icon: '',
+  ...extra,
+})
+
 const WS = [
-  { id: 'a', name: 'Work', open: true, current: true, tabCount: 3, color: 'purple', icon: '💼' },
-  { id: 'b', name: 'Personal', open: true, current: false, tabCount: 7, color: 'default', icon: '' },
-  { id: 'c', name: 'Archive', open: false, current: false, tabCount: 12, color: 'green', icon: '📚' },
+  ws('a', 'Work', { current: true, tabCount: 3, color: 'purple', icon: '💼' }),
+  ws('b', 'Personal', { tabCount: 7 }),
+  ws('c', 'Archive', { open: false, tabCount: 12, color: 'green', icon: '📚' }),
+]
+
+const WITH_SEP = [
+  ws('a', 'Work', { current: true, color: 'purple' }),
+  { type: 'separator', id: 'sep-1', label: 'Personal' },
+  ws('b', 'Shopping'),
+  ws('c', 'Media'),
 ]
 
 const tests = [
@@ -272,22 +291,109 @@ const tests = [
     eq(del.textContent, 'Delete?', 'no window to close')
   }),
 
-  test('the filter appears only once the list is long', async () => {
-    const short = mount(WS)
+  test('the filter is always available', async () => {
+    const dom = mount(WS)
     await new Promise(r => setTimeout(r, 60))
-    eq(short.window.document.getElementById('filter').hidden, true, 'hidden when short')
+    eq(dom.window.document.getElementById('filter').hidden, false, 'shown with three workspaces')
+  }),
 
-    const many = mount(
-      Array.from({ length: 8 }, (_, i) => ({
-        id: `w${i}`,
-        name: `Workspace ${i}`,
-        open: true,
-        current: i === 0,
-        tabCount: 1,
-      }))
+  test('separators render as a labelled rule', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    const seps = [...dom.window.document.querySelectorAll('.sep')]
+    eq(seps.length, 1, 'one separator')
+    eq(seps[0].querySelector('.sep-label').textContent, 'Personal', 'label shown')
+    eq(seps[0].getAttribute('role'), 'separator', 'announced as a separator')
+    eq(dom.window.document.querySelectorAll('.row').length, 3, 'workspaces still listed')
+  }),
+
+  test('the cursor steps over separators', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    const press = key =>
+      dom.window.document.dispatchEvent(
+        new dom.window.KeyboardEvent('keydown', { key, bubbles: true })
+      )
+    const focusedId = () =>
+      [...dom.window.document.querySelectorAll('.row')].find(r => r.dataset.focused === 'true')
+        ?.dataset.id
+
+    eq(focusedId(), 'a', 'starts on the current workspace')
+    press('ArrowDown')
+    eq(focusedId(), 'b', 'skipped the separator')
+    press('ArrowUp')
+    eq(focusedId(), 'a', 'and skipped it going back')
+  }),
+
+  test('number keys count workspaces, not list rows', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document.dispatchEvent(
+      new dom.window.KeyboardEvent('keydown', { key: '2', bubbles: true })
     )
     await new Promise(r => setTimeout(r, 60))
-    eq(many.window.document.getElementById('filter').hidden, false, 'shown when long')
+    eq(sent.find(m => m.method === 'activate')?.workspaceId, 'b', 'second workspace, not the separator')
+  }),
+
+  test('clicking a separator label opens an input', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .querySelector('.sep-label')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+
+    const input = dom.window.document.querySelector('.sep-input')
+    ok(input, 'input appeared')
+    eq(input.value, 'Personal', 'prefilled')
+  }),
+
+  test('Enter saves a separator label', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .querySelector('.sep-label')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+
+    const input = dom.window.document.querySelector('.sep-input')
+    input.value = 'Leisure'
+    input.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+
+    const msg = sent.find(m => m.method === 'updateSeparator')
+    ok(msg, 'update sent')
+    eq(msg.label, 'Leisure', 'the typed label')
+    eq(msg.separatorId, 'sep-1', 'for the right separator')
+  }),
+
+  test('removing a separator asks the background to drop it', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .querySelector('.sep-del')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+    eq(sent.find(m => m.method === 'deleteSeparator')?.separatorId, 'sep-1', 'by id')
+  }),
+
+  test('the add separator button asks for one', async () => {
+    const dom = mount(WS)
+    await new Promise(r => setTimeout(r, 60))
+    dom.window.document
+      .getElementById('add-sep')
+      .dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 60))
+    ok(sent.some(m => m.method === 'addSeparator'), 'requested')
+  }),
+
+  test('filtering hides separators along with non-matches', async () => {
+    const dom = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    const filter = dom.window.document.getElementById('filter')
+    filter.value = 'shop'
+    filter.dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+
+    eq(dom.window.document.querySelectorAll('.row').length, 1, 'one match')
+    eq(dom.window.document.querySelectorAll('.sep').length, 0, 'separator stepped aside')
   }),
 
   test('filtering narrows the list and reports an empty result', async () => {
@@ -327,6 +433,13 @@ const tests = [
     await new Promise(r => setTimeout(r, 60))
     ok(dom.window.document.getElementById('hint').textContent.includes('v1.0.1'), 'version shown')
     ok(dom.window.document.getElementById('hint').textContent.includes('3 workspaces'), 'count shown')
+
+    const mixed = mount(WITH_SEP)
+    await new Promise(r => setTimeout(r, 60))
+    ok(
+      mixed.window.document.getElementById('hint').textContent.includes('3 workspaces'),
+      'separators are not counted as workspaces'
+    )
   }),
 
   test('drag rows are draggable', async () => {

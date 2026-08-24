@@ -47,6 +47,18 @@ browser.runtime.onMessage.addListener(async msg => {
       refreshMenu()
       return await Util.serial(() => Workspaces.list(windowId))
 
+    case 'addSeparator':
+      await Util.serial(() => Workspaces.addSeparator(msg.label))
+      return await Util.serial(() => Workspaces.list(windowId))
+
+    case 'updateSeparator':
+      await Util.serial(() => Workspaces.updateSeparator(msg.separatorId, msg.label))
+      return await Util.serial(() => Workspaces.list(windowId))
+
+    case 'deleteSeparator':
+      await Util.serial(() => Workspaces.removeSeparator(msg.separatorId))
+      return await Util.serial(() => Workspaces.list(windowId))
+
     case 'backup':
       return await Util.serial(() => Backup.exportAll())
 
@@ -137,6 +149,7 @@ async function buildMenu() {
   const workspaces = await Util.serial(() => Workspaces.list(windowId))
 
   for (const ws of workspaces) {
+    if (ws.type === 'separator') continue
     browser.menus.create({
       id: `ws:${ws.id}`,
       parentId: MENU_ROOT,

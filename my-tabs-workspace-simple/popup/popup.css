@@ -3,6 +3,15 @@
    until the row is hovered or focused, so the list reads as identity first. */
 
 :root {
+  /* Size lives in two variables. --scale drives the box and its spacing,
+     --text drives type. Change either alone; nothing else hard-codes a size. */
+  --scale: 2;
+  --text: 1.5;
+
+  --base: 13px;
+  --font: calc(var(--base) * var(--text));
+  --gap: calc(4px * var(--scale));
+
   --fg: #15141a;
   --fg-dim: #5b5b66;
   --bg: #ffffff;
@@ -51,19 +60,19 @@
 
 body {
   margin: 0;
-  width: 288px;
+  width: calc(288px * var(--scale));
   background: var(--bg);
   color: var(--fg);
   font: message-box;
-  font-size: 13px;
+  font-size: var(--font);
 }
 
 /* ---- find ---- */
 
 .filter {
-  width: calc(100% - 12px);
-  margin: 6px 6px 0;
-  padding: 5px 8px;
+  width: calc(100% - var(--gap) * 3);
+  margin: calc(var(--gap) * 1.5) calc(var(--gap) * 1.5) 0;
+  padding: calc(var(--gap) * 1.2) calc(var(--gap) * 2);
   font: inherit;
   color: var(--fg);
   background: var(--sunken);
@@ -81,8 +90,8 @@ body {
 .list {
   list-style: none;
   margin: 0;
-  padding: 6px;
-  max-height: 380px;
+  padding: calc(var(--gap) * 1.5);
+  max-height: 460px;
   overflow-y: auto;
 }
 
@@ -91,9 +100,9 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 8px 7px 9px;
-  border-left: 3px solid transparent;
+  gap: calc(var(--gap) * 2);
+  padding: calc(var(--gap) * 1.8) calc(var(--gap) * 2);
+  border-left: calc(3px * var(--scale) / 1.4) solid transparent;
   border-radius: 0 4px 4px 0;
   cursor: pointer;
   user-select: none;
@@ -140,10 +149,10 @@ body {
 /* ---- row contents ---- */
 
 .chip {
-  width: 18px;
+  width: calc(var(--font) * 1.3);
   flex-shrink: 0;
   text-align: center;
-  font-size: 12px;
+  font-size: calc(var(--font) * 0.95);
   line-height: 1;
   color: var(--fg-dim);
 }
@@ -169,7 +178,7 @@ body {
 
 .row[data-open='false'] .count::after {
   content: ' saved';
-  font-size: 11px;
+  font-size: 0.82em;
 }
 
 /* Controls stay out of the way until the row is engaged. */
@@ -190,9 +199,8 @@ body {
   background: transparent;
   color: var(--fg-dim);
   font: inherit;
-  font-size: 13px;
   line-height: 1;
-  padding: 2px 4px;
+  padding: calc(var(--gap) * 0.6) var(--gap);
   border-radius: 3px;
   cursor: pointer;
 }
@@ -212,8 +220,8 @@ body {
   color: var(--bg);
   opacity: 1;
   width: auto;
-  padding: 2px 6px;
-  font-size: 11px;
+  padding: calc(var(--gap) * 0.6) calc(var(--gap) * 1.5);
+  font-size: 0.8em;
 }
 
 /* ---- editor ---- */
@@ -254,8 +262,8 @@ body {
 }
 
 .swatch {
-  width: 18px;
-  height: 18px;
+  width: calc(var(--font) * 1.1);
+  height: calc(var(--font) * 1.1);
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -275,12 +283,12 @@ body {
 .swatch[data-color='grey'] { --sw: var(--c-grey); }
 
 .icon-opt {
-  width: 22px;
-  height: 22px;
+  width: calc(var(--font) * 1.5);
+  height: calc(var(--font) * 1.5);
   padding: 0;
   border: 0;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: calc(var(--font) * 0.9);
   line-height: 1;
   cursor: pointer;
   background: var(--bg);
@@ -313,13 +321,15 @@ body {
 }
 
 .footer {
+  display: flex;
+  gap: var(--gap);
   border-top: 1px solid var(--border);
-  padding: 6px;
+  padding: calc(var(--gap) * 1.5);
 }
 
 .new {
-  width: 100%;
-  padding: 6px;
+  flex: 1;
+  padding: calc(var(--gap) * 1.6);
   border: 0;
   border-radius: 4px;
   background: var(--sunken);
@@ -340,11 +350,11 @@ body {
 .meta {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
+  gap: calc(var(--gap) * 2);
   margin: 0;
-  padding: 0 10px 7px;
+  padding: 0 calc(var(--gap) * 2.5) calc(var(--gap) * 1.8);
   color: var(--fg-dim);
-  font-size: 11px;
+  font-size: 0.8em;
 }
 
 .meta a {
@@ -384,4 +394,71 @@ body {
   .new {
     transition: background-color 120ms ease, opacity 120ms ease;
   }
+}
+
+/* ---- separators ----
+   Structure, not content: a rule the eye skips over, with an optional label
+   for when a group of workspaces deserves a name. */
+
+.sep {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: calc(var(--gap) * 1.2) calc(var(--gap) * 2);
+  cursor: default;
+}
+
+.sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.sep-label {
+  flex-shrink: 0;
+  color: var(--fg-dim);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: text;
+  padding: 2px 0;
+}
+
+.sep-label:empty::before {
+  content: 'label';
+  opacity: 0;
+}
+
+.sep:hover .sep-label:empty::before {
+  opacity: 0.6;
+}
+
+.sep-input {
+  flex-shrink: 0;
+  width: 45%;
+  padding: 2px calc(var(--gap) * 0.8);
+  font: inherit;
+  font-size: 0.82em;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+}
+
+.sep-del {
+  opacity: 0;
+  flex-shrink: 0;
+  order: 3;
+}
+
+.sep:hover .sep-del,
+.sep:focus-within .sep-del {
+  opacity: 1;
+}
+
+.secondary {
+  flex: 0 0 auto;
+  color: var(--fg-dim);
 }

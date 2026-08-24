@@ -26,6 +26,9 @@ workspace is open its tabs are simply that window's tabs.
   readable at a glance. Colours match Firefox's own tab group colours.
 - **Drag a row to reorder the list.**
 - Right-click a tab -> *Move tab to workspace*.
+- **Separators** to group the list. Click one to give it a label, or leave it
+  as a plain rule. Drag them like any other row.
+- **Find a workspace** by typing in the filter at the top.
 - Native tab groups are saved and rebuilt when a workspace reopens.
 
 ## State shown in the popup
@@ -81,9 +84,13 @@ one this add-on wrote.
 
 ```
 session (window)   wsId       the workspace this window shows
-storage.local      index      { order: [wsId] } - global order, drives the list
-storage.local      ws@<wsId>  { id, name, tabs, groups, savedAt }
+storage.local      index      { order: [id], separators: { id: { label } } }
+storage.local      ws@<wsId>  { id, name, color, icon, tabs, groups, savedAt }
 ```
+
+`order` holds workspace ids and separator ids together, so one array drives the
+whole list and reordering needs no special cases. Separator ids start with
+`sep-`, which every loop over `order` checks with `Store.isSeparatorId`.
 
 The window binding lives in a session value, so a window Firefox restores comes
 back attached to the same workspace. `tabs` is a snapshot kept current while the
@@ -109,6 +116,17 @@ Two paths, in order:
 - `about:`, `chrome:` and `moz-extension:` tabs cannot be recreated and are
   skipped when a workspace reopens.
 - Tabs are restored unloaded, the way session restore does.
+
+## Sizing
+
+The popup's size is two CSS variables at the top of `popup/popup.css`:
+
+```css
+--scale: 2;    /* the box and its spacing */
+--text: 1.5;   /* type */
+```
+
+Nothing else hard-codes a size, so either can be changed on its own.
 
 ## Files
 

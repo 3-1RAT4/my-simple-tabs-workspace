@@ -3,7 +3,10 @@
 // Storage layout
 //
 //   session (window)  wsId       the workspace this window is showing
-//   storage.local     index      { order: [wsId] } - global, drives the popup list
+//   storage.local     index      { order: [id], separators: { id: { label } } }
+//                                order holds workspace ids and separator ids
+//                                together, so one array drives the whole list
+//                                and reordering needs no special cases.
 //   storage.local     ws@<wsId>  { id, name, tabs, groups, savedAt }
 //
 // One workspace is shown by at most one window, and every window shows exactly
@@ -16,7 +19,16 @@
 const Store = {
   async loadIndex() {
     const res = await browser.storage.local.get('index')
-    return res.index || { order: [] }
+    const index = res.index || {}
+    if (!Array.isArray(index.order)) index.order = []
+    if (!index.separators || typeof index.separators !== 'object') index.separators = {}
+    return index
+  },
+
+  // Separator ids are recognisable on sight, which keeps every loop that walks
+  // `order` honest about what it is looking at.
+  isSeparatorId(id) {
+    return typeof id === 'string' && id.startsWith('sep-')
   },
 
   async saveIndex(index) {
@@ -37,6 +49,13 @@ const Store = {
     await browser.storage.local.remove(`ws@${wsId}`)
     const index = await Store.loadIndex()
     index.order = index.order.filter(id => id !== wsId)
+    await Store.saveIndex(index)
+  },
+
+  async removeSeparator(sepId) {
+    const index = await Store.loadIndex()
+    index.order = index.order.filter(id => id !== sepId)
+    delete index.separators[sepId]
     await Store.saveIndex(index)
   },
 
