@@ -61,8 +61,8 @@ and dropping one only ever strands files. Exports always use the current name.
 Each refuses to be restored as the other, naming what the file actually is and
 which control to use.
 
-Add-ons manager -> My Simple Tabs Workspace -> Preferences, or `backup` in the popup
-footer. Saves every workspace, its tabs and its tab groups to a JSON file, and
+Add-ons manager -> My Simple Tabs Workspace -> Preferences, or `configuration`
+in the popup footer. Saves every workspace, its tabs and its tab groups to a JSON file, and
 restores one either alongside the current workspaces or in place of them.
 Restored workspaces arrive closed.
 
@@ -172,7 +172,8 @@ Two paths, in order:
 
 ## Settings
 
-Add-ons manager -> Preferences. Every macro adjustment lives in one schema,
+Add-ons manager -> Preferences, or `configuration` in the popup footer. Every
+macro adjustment lives in one schema,
 `background/settings.js`, which supplies the default, the bounds and the
 validation. The options page renders whatever that schema declares, so adding a
 setting means adding one entry.

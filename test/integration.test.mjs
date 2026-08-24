@@ -220,6 +220,21 @@ const tests = [
     eq(granted, true, 'and the permission was asked for and kept')
   }),
 
+  test('the configuration link opens the options page', async () => {
+    const env = await boot()
+    let opened = false
+    env.browser.runtime.openOptionsPage = async () => {
+      opened = true
+    }
+
+    const link = env.doc.getElementById('configuration')
+    ok(link, 'the link is there')
+    eq(link.textContent, 'configuration', 'named after the page it opens')
+    click(env.dom, link)
+    await new Promise(r => setTimeout(r, 60))
+    eq(opened, true, 'and it opens it')
+  }),
+
   test('the new workspace form creates one with its details', async () => {
     const env = await boot()
     click(env.dom, env.doc.getElementById('new'))

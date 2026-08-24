@@ -631,7 +631,9 @@ document.getElementById('add-sep').addEventListener('click', async () => {
   apply(await send('addSeparator', { props: {} }))
 })
 
-document.getElementById('backup').addEventListener('click', event => {
+// The page it opens holds the settings as well as the backups, so the link is
+// named after the page rather than one of the things on it.
+document.getElementById('configuration').addEventListener('click', event => {
   event.preventDefault()
   browser.runtime.openOptionsPage()
   window.close()
