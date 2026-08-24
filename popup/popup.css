@@ -540,23 +540,16 @@ body {
 }
 
 .align-opt {
-  width: calc(var(--font) * 1.5);
-  height: calc(var(--font) * 1.5);
-  padding: 0;
+  padding: calc(var(--gap) * 0.7) calc(var(--gap) * 1.4);
   border: 0;
   border-radius: 4px;
   cursor: pointer;
   background: var(--bg);
   color: var(--fg-dim);
-  font-size: calc(var(--font) * 0.85);
+  font: inherit;
+  font-size: 0.82em;
   line-height: 1;
-  display: flex;
-  align-items: center;
 }
-
-.align-opt[data-align='left'] { justify-content: flex-start; padding-left: 3px; }
-.align-opt[data-align='center'] { justify-content: center; }
-.align-opt[data-align='right'] { justify-content: flex-end; padding-right: 3px; }
 
 .align-opt:hover {
   background: var(--raised);

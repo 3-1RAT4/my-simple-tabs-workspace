@@ -172,8 +172,9 @@ function toggleSeparatorEditor(row, item) {
     button.className = 'align-opt'
     button.dataset.align = align
     button.dataset.selected = String((item.align || 'left') === align)
-    button.textContent = { left: '\u2261', center: '\u2261', right: '\u2261' }[align]
-    button.title = `Align ${align}`
+    // Three identical glyphs told you nothing about which was which.
+    button.textContent = { left: 'Left', center: 'Center', right: 'Right' }[align]
+    button.title = `Put the label on the ${align}`
     button.setAttribute('aria-label', `Align ${align}`)
     aligns.append(button)
 
